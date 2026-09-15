@@ -1,0 +1,1069 @@
+/* =============================================================================
+   personality.css — 💗 My Luvli Style ♡
+   -----------------------------------------------------------------------------
+   Only what is unique to this page: the personality cards, the avatar stage,
+   the onboarding steps and the custom-setting pickers.
+
+   Everything else — colours, cards, buttons, chips, inputs, modals, toasts,
+   hearts, the aurora background — comes from the shared design system in
+   css/style.css, so this page cannot drift away from the rest of Luvli.
+
+   Contents
+     1. Page shell & top bar
+     2. The style cards (choose a personality)
+     3. Onboarding steps
+     4. Custom settings (communication / reminders / affirmations / avatar)
+     5. The dashboard
+     6. Motion, hover and responsive rules
+   ========================================================================== */
+
+/* =========================== 1. PAGE & TOP BAR =========================== */
+.ls-body {
+  min-height: 100vh;
+  min-height: 100dvh;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-body);
+  -webkit-font-smoothing: antialiased;
+}
+
+.ls-app {
+  position: relative;
+  z-index: 1;
+  max-width: 1240px;
+  margin: 0 auto;
+  padding: 18px clamp(14px, 3vw, 34px) 48px;
+}
+
+.ls-shell {
+  display: block;
+}
+
+.ls-topbar {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px clamp(12px, 2vw, 20px);
+  margin-bottom: 22px;
+  background: var(--glass);
+  border: 1px solid var(--hairline);
+  border-radius: var(--r-lg);
+  box-shadow:
+    var(--sheen),
+    var(--shadow-sm),
+    0 4px 16px rgba(93, 45, 63, 0.04);
+  backdrop-filter: blur(20px) saturate(160%);
+  -webkit-backdrop-filter: blur(20px) saturate(160%);
+}
+
+.ls-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 14px 6px 6px;
+  border-radius: var(--r-pill);
+  color: var(--deep-rose);
+  text-decoration: none;
+  font-weight: 700;
+  font-size: 14px;
+  transition:
+    background var(--speed) var(--ease),
+    transform var(--speed) var(--ease);
+}
+.ls-back:hover {
+  background: var(--surface-3);
+  transform: translateX(-2px);
+}
+.ls-back-text {
+  white-space: nowrap;
+}
+
+.ls-title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 0 auto 0 0;
+}
+.ls-title-orb {
+  display: grid;
+  place-items: center;
+  width: 46px;
+  height: 46px;
+  border-radius: 16px;
+  background: var(--grad-aurora);
+  box-shadow:
+    var(--sheen),
+    var(--shadow-sm),
+    0 4px 14px rgba(224, 144, 172, 0.18);
+  animation: lsOrbFloat 5s var(--ease) infinite;
+}
+.ls-title-orb .ls-avatar {
+  width: 34px;
+  height: 34px;
+}
+.ls-title-text {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.25;
+}
+.ls-title-text strong {
+  font-family: var(--font-display);
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--ink);
+  letter-spacing: var(--tracking-tight);
+}
+.ls-title-text small {
+  font-size: 12.5px;
+  color: var(--muted);
+  font-weight: 600;
+}
+
+.ls-top-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+@keyframes lsOrbFloat {
+  0%,
+  100% {
+    transform: translateY(0) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-4px) rotate(2deg);
+  }
+}
+
+/* ======================= 2. THE STYLE CARDS ============================== */
+.ls-grid {
+  display: grid;
+  gap: 16px;
+}
+.ls-grid-styles {
+  grid-template-columns: 1fr;
+}
+@media (min-width: 700px) {
+  .ls-grid-styles {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+@media (min-width: 1120px) {
+  .ls-grid-styles {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+.ls-style-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 20px 18px 18px;
+  text-align: left;
+  border-radius: var(--r-lg);
+  border: 1.5px solid var(--hairline);
+  background: var(--grad-card);
+  box-shadow: var(--sheen), var(--shadow-xs);
+  cursor: pointer;
+  overflow: hidden;
+  transition:
+    transform var(--speed-slow) var(--ease),
+    box-shadow var(--speed-slow) var(--ease),
+    border-color var(--speed) var(--ease);
+  animation: lsRise 0.42s var(--ease-out) both;
+}
+.ls-style-card::after {
+  content: "";
+  position: absolute;
+  inset: auto -30% -60% auto;
+  width: 190px;
+  height: 190px;
+  border-radius: 50%;
+  background: var(--ls-tint, var(--baby-pink));
+  opacity: 0.5;
+  filter: blur(6px);
+  pointer-events: none;
+  transition:
+    opacity var(--speed-slow) var(--ease),
+    transform var(--speed-slow) var(--ease);
+}
+.ls-style-card:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--sheen), var(--shadow-md);
+}
+.ls-style-card:hover::after {
+  opacity: 0.8;
+  transform: scale(1.1);
+}
+
+.ls-style-card.is-selected {
+  border-color: var(--soft-rose);
+  box-shadow: var(--glow), var(--sheen), var(--shadow-md);
+}
+.ls-style-card.is-selected::after {
+  opacity: 0.95;
+}
+.ls-style-card.is-active {
+  border-color: var(--dusty-rose);
+  background: linear-gradient(170deg, var(--surface) 0%, var(--surface-3) 100%);
+}
+.ls-style-card:focus-visible {
+  outline: none;
+  box-shadow: var(--glow-lg), var(--shadow-sm);
+}
+
+/* each personality wears its own gentle tint */
+.ls-style-card[data-style="soft"] {
+  --ls-tint: #fde8f1;
+}
+.ls-style-card[data-style="coach"] {
+  --ls-tint: #ffeadc;
+}
+.ls-style-card[data-style="study"] {
+  --ls-tint: #efe9ff;
+}
+.ls-style-card[data-style="calm"] {
+  --ls-tint: #e7f4ec;
+}
+
+.ls-style-top {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  position: relative;
+  z-index: 1;
+}
+.ls-style-name {
+  font-family: var(--font-display);
+  font-size: 17.5px;
+  font-weight: 700;
+  color: var(--ink);
+  letter-spacing: var(--tracking-tight);
+}
+.ls-style-tagline {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--dusty-rose);
+  letter-spacing: 0.01em;
+}
+.ls-style-blurb {
+  position: relative;
+  z-index: 1;
+  font-size: 14.5px;
+  color: var(--muted);
+  line-height: 1.5;
+}
+.ls-style-traits {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  position: relative;
+  z-index: 1;
+}
+.ls-style-examples {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: auto;
+  padding-top: 12px;
+  border-top: 1px dashed var(--hairline-2);
+}
+.ls-style-example {
+  font-family: var(--font-serif);
+  font-style: italic;
+  font-size: 14px;
+  color: var(--deep-rose);
+  line-height: 1.45;
+}
+.ls-style-bestfor {
+  position: relative;
+  z-index: 1;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--muted);
+}
+.ls-style-pick {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: var(--grad-rose);
+  color: #fff;
+  font-size: 14px;
+  font-weight: 800;
+  box-shadow: 0 2px 10px rgba(224, 144, 172, 0.28);
+  opacity: 0;
+  transform: scale(0.6);
+  transition:
+    opacity var(--speed) var(--ease),
+    transform var(--speed) var(--spring);
+}
+.ls-style-card.is-selected .ls-style-pick {
+  opacity: 1;
+  transform: scale(1);
+}
+
+/* small version, used on the dashboard */
+.ls-mini-grid {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: 1fr 1fr;
+}
+@media (min-width: 620px) {
+  .ls-mini-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+.ls-mini-card {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 12px;
+  border-radius: var(--r-sm);
+  border: 1.5px solid var(--hairline);
+  background: var(--surface);
+  text-align: left;
+  transition:
+    transform var(--speed) var(--ease),
+    border-color var(--speed) var(--ease),
+    background var(--speed) var(--ease);
+}
+.ls-mini-card:hover {
+  transform: translateY(-2px);
+  background: var(--surface-3);
+}
+.ls-mini-card.is-active {
+  border-color: var(--soft-rose);
+  background: var(--surface-3);
+  box-shadow: var(--glow);
+}
+.ls-mini-top {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.ls-mini-name {
+  font-size: 14.5px;
+  font-weight: 700;
+  color: var(--ink);
+}
+.ls-mini-sub {
+  font-size: 12px;
+  color: var(--muted);
+  font-weight: 600;
+}
+
+/* ======================= 3. ONBOARDING STEPS ============================ */
+.ls-step {
+  animation: lsRise 0.45s var(--ease-out) both;
+}
+.ls-step[hidden] {
+  display: none;
+}
+.ls-step-hero {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  padding: clamp(22px, 3.4vw, 38px);
+}
+.ls-hero-inner {
+  display: flex;
+  align-items: center;
+  gap: clamp(16px, 3vw, 30px);
+  flex-wrap: wrap;
+}
+.ls-hero-text {
+  flex: 1 1 320px;
+  min-width: 0;
+  position: relative;
+  z-index: 1;
+}
+.ls-hero-text .hero-date {
+  margin-top: 8px;
+}
+.ls-hero-avatar {
+  display: grid;
+  place-items: center;
+  flex: none;
+}
+.ls-hero-avatar .ls-avatar {
+  width: clamp(88px, 16vw, 124px);
+  height: clamp(88px, 16vw, 124px);
+}
+.ls-hero-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  position: relative;
+  z-index: 1;
+}
+.ls-hero-actions .btn-hero {
+  width: auto;
+  min-width: 260px;
+  flex: 0 1 320px;
+}
+.ls-fineprint {
+  position: relative;
+  z-index: 1;
+  font-size: 12.5px;
+  color: var(--muted);
+  font-weight: 600;
+}
+
+.ls-h2 {
+  font-family: var(--font-display);
+  font-size: clamp(1.4rem, 3vw, 1.85rem);
+  font-weight: 700;
+  color: var(--ink);
+  letter-spacing: var(--tracking-tight);
+}
+
+.ls-step-nav {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 20px;
+}
+.ls-grow {
+  flex: 1 1 240px;
+}
+
+/* ======================= 4. CUSTOM SETTINGS ============================= */
+.ls-custom-grid {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: 1fr;
+}
+@media (min-width: 860px) {
+  .ls-custom-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+.ls-span-2 {
+  grid-column: 1 / -1;
+}
+.ls-custom-card {
+  display: flex;
+  flex-direction: column;
+}
+
+.ls-option-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.ls-option {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: var(--r-sm);
+  border: 1.5px solid var(--hairline);
+  background: var(--surface);
+  text-align: left;
+  transition:
+    border-color var(--speed) var(--ease),
+    background var(--speed) var(--ease),
+    transform var(--speed) var(--ease);
+}
+.ls-option:hover {
+  background: var(--surface-2);
+  transform: translateX(2px);
+}
+.ls-option.is-on {
+  border-color: var(--soft-rose);
+  background: var(--surface-3);
+  box-shadow: var(--glow);
+}
+.ls-option-mark {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 1.5px solid var(--hairline-2);
+  color: transparent;
+  font-size: 12px;
+  font-weight: 800;
+  transition:
+    background var(--speed) var(--ease),
+    color var(--speed) var(--ease),
+    border-color var(--speed) var(--ease);
+}
+.ls-option.is-on .ls-option-mark {
+  background: var(--grad-rose);
+  border-color: transparent;
+  color: #fff;
+}
+.ls-option-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.ls-option-label {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--ink);
+}
+.ls-option-sub {
+  font-size: 12.5px;
+  color: var(--muted);
+  font-weight: 600;
+}
+.ls-option-example {
+  margin-top: 4px;
+  font-family: var(--font-serif);
+  font-style: italic;
+  font-size: 13.5px;
+  color: var(--deep-rose);
+  line-height: 1.45;
+}
+
+/* ---- the avatar stage & pickers ---- */
+.ls-avatar-row {
+  display: flex;
+  align-items: center;
+  gap: clamp(16px, 3vw, 28px);
+  flex-wrap: wrap;
+}
+.ls-avatar-stage {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: clamp(130px, 24vw, 168px);
+  height: clamp(130px, 24vw, 168px);
+  border-radius: var(--r-xl);
+  background: var(--grad-mesh), var(--surface-2);
+  border: 1.5px solid var(--hairline);
+  box-shadow: var(--sheen), var(--shadow-sm);
+}
+.ls-avatar-stage-lg {
+  width: clamp(120px, 22vw, 164px);
+  height: clamp(120px, 22vw, 164px);
+}
+.ls-avatar-stage .ls-avatar {
+  width: 72%;
+  height: 72%;
+}
+.ls-avatar-controls {
+  flex: 1 1 280px;
+  min-width: 0;
+}
+
+.ls-swatch-row,
+.ls-shape-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.ls-swatch {
+  display: grid;
+  place-items: center;
+  width: var(--tap);
+  height: var(--tap);
+  border-radius: var(--r-xs);
+  border: 2px solid var(--hairline);
+  background: var(--swatch, var(--baby-pink));
+  position: relative;
+  transition:
+    transform var(--speed) var(--spring),
+    border-color var(--speed) var(--ease),
+    box-shadow var(--speed) var(--ease);
+}
+.ls-swatch:hover {
+  transform: translateY(-2px) scale(1.03);
+}
+.ls-swatch.is-on {
+  border-color: var(--deep-rose);
+  box-shadow: var(--glow), var(--shadow-xs);
+}
+.ls-swatch-label {
+  position: absolute;
+  inset: auto 0 -19px 0;
+  font-size: 10.5px;
+  font-weight: 800;
+  text-align: center;
+  color: var(--muted);
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+.ls-swatch-row {
+  padding-bottom: 20px;
+}
+
+.ls-shape {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: var(--tap);
+  padding: 8px 14px;
+  border-radius: var(--r-pill);
+  border: 1.5px solid var(--hairline);
+  background: var(--surface);
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--ink);
+  transition:
+    border-color var(--speed) var(--ease),
+    background var(--speed) var(--ease),
+    transform var(--speed) var(--spring);
+}
+.ls-shape:hover {
+  transform: translateY(-2px);
+  background: var(--surface-2);
+}
+.ls-shape.is-on {
+  border-color: var(--soft-rose);
+  background: var(--surface-3);
+  box-shadow: var(--glow);
+}
+
+/* ============================ 5. THE AVATAR ============================= */
+/* One character, built from a colour + a shape, used on every page. */
+.ls-avatar {
+  position: relative;
+  display: grid;
+  place-items: center;
+  border-radius: 42% 42% 46% 46% / 44% 44% 44% 44%;
+  background: var(--avatar-bg, var(--baby-pink));
+  border: 2px solid var(--avatar-ring, var(--soft-rose));
+  box-shadow:
+    var(--sheen),
+    var(--shadow-sm),
+    0 6px 18px rgba(224, 144, 172, 0.16);
+  transition:
+    background var(--speed-slow) var(--ease),
+    border-color var(--speed-slow) var(--ease),
+    border-radius var(--speed-slow) var(--ease),
+    transform var(--speed-slow) var(--spring);
+}
+.ls-avatar-sm {
+  width: 38px;
+  height: 38px;
+  border-width: 1.5px;
+}
+.ls-avatar-md {
+  width: 54px;
+  height: 54px;
+  border-width: 2px;
+}
+.ls-avatar-lg {
+  width: 92px;
+  height: 92px;
+  border-width: 2.5px;
+}
+
+.ls-avatar-glow {
+  position: absolute;
+  inset: -22%;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle,
+    var(--avatar-glow, rgba(242, 169, 192, 0.45)) 0%,
+    transparent 68%
+  );
+  opacity: 0.8;
+  pointer-events: none;
+  z-index: 0;
+}
+.ls-avatar-art {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  width: 56%;
+  height: 56%;
+  color: var(--avatar-ink, var(--deep-rose));
+}
+.ls-avatar-art .ico {
+  width: 100%;
+  height: 100%;
+}
+
+/* each colour sets its own soft palette */
+.ls-avatar[data-color="pink"] {
+  --avatar-bg: var(--baby-pink);
+  --avatar-ring: var(--soft-rose);
+  --avatar-ink: var(--deep-rose);
+  --avatar-glow: rgba(242, 169, 192, 0.5);
+}
+.ls-avatar[data-color="cream"] {
+  --avatar-bg: var(--cream);
+  --avatar-ring: var(--accent-peach);
+  --avatar-ink: var(--deep-rose);
+  --avatar-glow: rgba(248, 200, 160 0.5);
+}
+.ls-avatar[data-color="lavender"] {
+  --avatar-bg: var(--accent-lilac);
+  --avatar-ring: var(--soft-rose);
+  --avatar-ink: var(--ink);
+  --avatar-glow: rgba(220, 196, 248, 0.55);
+}
+.ls-avatar[data-color="peach"] {
+  --avatar-bg: var(--accent-peach);
+  --avatar-ring: var(--dusty-rose);
+  --avatar-ink: var(--deep-rose);
+  --avatar-glow: rgba(240, 165, 126, 0.5);
+}
+
+/* and each shape changes the silhouette a little */
+.ls-shape-flower {
+  border-radius: 50% 50% 50% 50% / 46% 46% 46% 46%;
+}
+.ls-shape-icon {
+  border-radius: 34% 34% 40% 40% / 34% 34% 44% 44%;
+}
+.ls-shape-minimal {
+  border-radius: var(--r-md);
+}
+.ls-shape-heart {
+  border-radius: 46% 46% 52% 52% / 40% 40% 58% 58%;
+}
+.ls-shape-star {
+  border-radius: 32% 32% 32% 32% / 32% 32% 32% 32%;
+}
+
+.ls-avatar.is-alive {
+  animation: lsAvatarBreath 4.6s var(--ease) infinite;
+}
+.ls-avatar.is-alive .ls-avatar-glow {
+  animation: lsGlowPulse 4.6s var(--ease) infinite;
+}
+
+@keyframes lsAvatarBreath {
+  0%,
+  100% {
+    transform: translateY(0) scale(1);
+  }
+  50% {
+    transform: translateY(-3px) scale(1.015);
+  }
+}
+@keyframes lsGlowPulse {
+  0%,
+  100% {
+    opacity: 0.65;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.95;
+    transform: scale(1.06);
+  }
+}
+
+/* the little chip used in the app and the coach */
+.ls-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 6px 13px;
+  border-radius: var(--r-pill);
+  background: var(--surface-3);
+  border: 1px solid var(--hairline-2);
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--deep-rose);
+  white-space: nowrap;
+  box-shadow: var(--sheen);
+}
+.ls-chip-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--soft-rose);
+  flex: none;
+}
+.ls-chip-dot[data-color="pink"] {
+  background: #f2a9c0;
+}
+.ls-chip-dot[data-color="cream"] {
+  background: #eec79b;
+}
+.ls-chip-dot[data-color="lavender"] {
+  background: #c0adeb;
+}
+.ls-chip-dot[data-color="peach"] {
+  background: #f0a57e;
+}
+.ls-chip-today {
+  font-size: 10.5px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+/* =========================== 6. THE DASHBOARD =========================== */
+.ls-today-card {
+  background: linear-gradient(
+    145deg,
+    var(--surface) 0%,
+    var(--baby-pink) 55%,
+    var(--blush) 100%
+  );
+  border-color: var(--hairline-2);
+  box-shadow:
+    var(--sheen-deep),
+    var(--shadow-md),
+    0 8px 28px rgba(224, 144, 172, 0.1);
+  overflow: hidden;
+}
+.ls-today-inner {
+  display: flex;
+  align-items: center;
+  gap: clamp(16px, 3vw, 30px);
+  flex-wrap: wrap;
+}
+.ls-today-text {
+  flex: 1 1 320px;
+  min-width: 0;
+}
+.ls-today-name {
+  font-family: var(--font-display);
+  font-size: clamp(1.7rem, 4vw, 2.4rem);
+  font-weight: 700;
+  color: var(--ink);
+  letter-spacing: var(--tracking-tight);
+  line-height: 1.1;
+  margin: 4px 0 4px;
+}
+.ls-today-tagline {
+  font-size: 14.5px;
+  font-weight: 700;
+  color: var(--dusty-rose);
+}
+.ls-morning {
+  margin-top: 12px;
+  font-family: var(--font-serif);
+  font-style: italic;
+  font-size: clamp(15px, 2vw, 17px);
+  color: var(--ink);
+  line-height: 1.5;
+}
+.ls-today-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 18px;
+}
+
+.ls-affirm-card {
+  text-align: center;
+  background: var(--grad-pink);
+  border-color: var(--hairline-2);
+}
+
+.ls-memory {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.ls-memory-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: 14px;
+  color: var(--text);
+  line-height: 1.5;
+}
+.ls-memory-ico {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 30px;
+  height: 30px;
+  border-radius: 10px;
+  background: var(--surface-3);
+  color: var(--deep-rose);
+}
+.ls-memory-ico .ico {
+  width: 16px;
+  height: 16px;
+}
+.ls-memory-key {
+  font-weight: 700;
+  color: var(--ink);
+}
+.ls-memory-quote {
+  font-family: var(--font-serif);
+  font-style: italic;
+  color: var(--deep-rose);
+}
+
+.ls-connect-card {
+  grid-column: 1 / -1;
+}
+
+.ls-connect-grid {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+}
+.ls-connect {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px;
+  border-radius: var(--r-sm);
+  background: var(--surface-2);
+  border: 1px solid var(--hairline);
+  transition:
+    transform var(--speed) var(--ease),
+    box-shadow var(--speed) var(--ease);
+}
+.ls-connect:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--sheen), var(--shadow-xs);
+}
+.ls-connect-ico {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 34px;
+  height: 34px;
+  border-radius: 12px;
+  background: var(--grad-pink);
+  color: var(--deep-rose);
+}
+.ls-connect-ico .ico {
+  width: 17px;
+  height: 17px;
+}
+.ls-connect-name {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--ink);
+}
+.ls-connect-note {
+  font-size: 12.5px;
+  color: var(--muted);
+  font-weight: 600;
+  line-height: 1.45;
+}
+
+.ls-foot {
+  margin-top: 26px;
+  text-align: center;
+  font-size: 13px;
+  color: var(--muted);
+  font-weight: 600;
+}
+
+/* ==================== 7. MOTION & RESPONSIVE ============================ */
+@keyframes lsRise {
+  0% {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* A soft shimmer while a style is being applied */
+.ls-style-card.is-applying {
+  animation: lsApplyPulse 0.7s var(--ease);
+}
+@keyframes lsApplyPulse {
+  0% {
+    box-shadow: var(--glow);
+  }
+  45% {
+    box-shadow:
+      0 0 0 10px rgba(242, 169, 192, 0.1),
+      var(--glow-lg);
+  }
+  100% {
+    box-shadow: var(--glow);
+  }
+}
+
+@media (max-width: 700px) {
+  .ls-top-right .btn {
+    display: none;
+  }
+  .ls-title-text small {
+    display: none;
+  }
+  .ls-hero-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .ls-hero-actions .btn {
+    width: 100%;
+  }
+  .ls-hero-actions .btn-hero {
+    min-width: 0;
+    flex: 1 1 auto;
+  }
+  .ls-today-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .ls-today-actions .btn {
+    width: 100%;
+  }
+  .ls-avatar-row {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .ls-step-nav .btn {
+    flex: 1 1 auto;
+  }
+}
+
+@media (min-width: 701px) and (max-width: 1024px) {
+  .ls-app {
+    max-width: 100%;
+  }
+}
+
+/* Tablet: the avatar stage sits beside its controls, a little smaller */
+@media (min-width: 701px) and (max-width: 900px) {
+  .ls-avatar-stage {
+    width: 140px;
+    height: 140px;
+  }
+}
+
+/* The reduce-motion setting in Settings, and the OS preference, both win. */
+html.reduce-motion .ls-avatar.is-alive,
+html.reduce-motion .ls-title-orb,
+html.reduce-motion .ls-avatar.is-alive .ls-avatar-glow {
+  animation: none;
+}
+html.reduce-motion .ls-step,
+html.reduce-motion .ls-style-card {
+  animation: none;
+}
+
+html[data-theme="dusk"] .ls-today-card {
+  background: linear-gradient(
+    145deg,
+    var(--surface) 0%,
+    var(--surface-2) 55%,
+    var(--surface-3) 100%
+  );
+}
+html[data-theme="dusk"] .ls-avatar-glow {
+  opacity: 0.45;
+}
+html[data-theme="dusk"] .ls-swatch.is-on {
+  box-shadow: var(--glow), var(--shadow-xs);
+}

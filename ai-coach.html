@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<!--
+ Luvli AI Life Coach — a calm, warm companion inside Luvli.
+ -----------------------------------------------------------------------------
+ Files that make this page:
+ • ai-coach.html  -> structure only
+ • css/ai-coach.css  -> everything you see here (uses the shared tokens)
+ • js/ai-coach.js  -> the coach: memory, the "brain" and the little screens
+ Shared with the rest of Luvli (so the coach understands your real life):
+ • css/style.css  -> the one design system (colours, cards, buttons…)
+ • js/storage.js  -> the same saved life-data as the main app
+ • js/scheduler.js  -> the same day logic (what's now / next / free time)
+ • js/affirmations.js  -> the gentle encouragement library
+ It reads and writes the very same localStorage key as Luvli, so anything you
+ ask the coach to add really appears on your day.
+-->
+<html lang="en" data-theme="rose">
+<head>
+ <meta charset="UTF-8" />
+ <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+ <title>Luvli — your AI life coach</title>
+ <meta name="description" content="Luvli is a warm AI life coach that helps you plan your life, solve problems, stay motivated and make better decisions — right inside Luvli." />
+ <meta name="theme-color" content="#FFF5F8" />
+ <link rel="manifest" href="manifest.json" />
+ <link rel="icon" href="assets/icon.svg" type="image/svg+xml" />
+ <link rel="apple-touch-icon" href="assets/icon-192.png" />
+ <link rel="stylesheet" href="css/style.css" />
+ <link rel="stylesheet" href="css/ai-coach.css" />
+</head>
+<body class="coach-body">
+
+ <a class="skip-link" href="#coachMessages">Skip to your conversation</a>
+
+ <p class="sr-only" id="coachAnnouncer" aria-live="polite" aria-atomic="true"></p>
+
+ <!-- Shared gradient used by the little progress rings -->
+ <svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+ <defs>
+ <linearGradient id="gradRose" x1="0%" y1="0%" x2="100%" y2="100%">
+ <stop offset="0%" stop-color="#F7CBD9" />
+ <stop offset="55%" stop-color="#EFA8BF" />
+ <stop offset="100%" stop-color="#D98FA8" />
+ </linearGradient>
+ </defs>
+ </svg>
+
+ <div class="bg-decor" aria-hidden="true">
+ <span class="blob blob-1"></span>
+ <span class="blob blob-2"></span>
+ <span class="blob blob-3"></span>
+ </div>
+
+ <div class="coach-app">
+
+ <!-- ============================ TOP BAR ============================ -->
+ <header class="coach-topbar">
+ <a class="coach-back" href="index.html" title="Back to Luvli">
+ <span class="brand-mark small"></span>
+ <span class="coach-back-text">Back to Luvli</span>
+ </a>
+
+ <div class="coach-title">
+ <span class="coach-orb" aria-hidden="true"></span>
+ <span class="coach-title-text">
+ <strong>Luvli</strong>
+ <small>Your AI life coach</small>
+ </span>
+ </div>
+
+ <div class="coach-top-right">
+ <span class="chip chip-soft" id="coachTopChip">Here with you</span>
+ <a class="btn btn-soft btn-small" href="index.html">Open my day</a>
+ </div>
+ </header>
+
+ <!-- ============================ SHELL ============================ -->
+ <main class="coach-shell">
+
+ <!-- ---------------------------- CHAT ---------------------------- -->
+ <section class="card coach-chat" aria-label="Conversation with Luvli">
+ <div class="coach-chat-head">
+ <div class="coach-identity">
+ <span class="coach-avatar" aria-hidden="true">
+ <span class="coach-avatar-face" data-ico="heart"></span>
+ <span class="coach-avatar-pulse"></span>
+ </span>
+ <div>
+ <strong class="coach-name">Luvli</strong>
+ <span class="coach-status" id="coachStatus">Here with you, always</span>
+ </div>
+ </div>
+ <div class="coach-chat-tools">
+ <button class="btn btn-ghost btn-small" id="coachNewChatBtn" type="button">Fresh start</button>
+ <button class="btn btn-ghost btn-small" id="coachClearBtn" type="button">Clear</button>
+ </div>
+ </div>
+
+ <div class="coach-scroll" id="coachMessages" role="log" aria-live="polite"></div>
+
+ <div class="coach-typing" id="coachTyping" hidden>
+ <span class="coach-avatar tiny" aria-hidden="true"><span class="coach-avatar-face" data-ico="heart"></span></span>
+ <span class="coach-typing-dots" aria-label="Luvli is writing"><i></i><i></i><i></i></span>
+ </div>
+
+ <div class="coach-quick" id="coachQuick" aria-label="Quick prompts"></div>
+
+ <form class="coach-composer" id="coachForm" autocomplete="off">
+ <textarea class="input coach-input" id="coachInput" rows="1"
+ placeholder="Tell me anything, luv — how you feel, what you're stuck on, or what you want to become…"
+ aria-label="Your message to Luvli"></textarea>
+ <button class="btn btn-primary coach-send" id="coachSendBtn" type="submit" aria-label="Send">Send</button>
+ </form>
+ <p class="coach-hint">Luvli remembers this conversation on this device · Enter to send, Shift+Enter for a new line</p>
+ <p class="coach-hint coach-engine" id="coachEngine"></p>
+ </section>
+
+ <!-- ---------------------------- SIDE RAIL ---------------------------- -->
+ <aside class="coach-rail" aria-label="Your life at a glance">
+
+ <section class="card coach-rail-card">
+ <div class="card-head">
+ <h2 class="card-title">Today at a glance</h2>
+ <span class="chip chip-soft" id="coachGlanceChip">—</span>
+ </div>
+ <div id="coachGlance" class="coach-glance"></div>
+ <div class="coach-mini-actions" id="coachGlanceActions"></div>
+ </section>
+
+ <section class="card coach-rail-card">
+ <div class="card-head">
+ <h2 class="card-title">Your goals</h2>
+ <button class="chip-item chip-add-only" type="button" id="coachAddGoalBtn">New goal</button>
+ </div>
+ <div id="coachGoals" class="coach-goals"></div>
+ </section>
+
+ <section class="card coach-rail-card">
+ <div class="card-head">
+ <h2 class="card-title">How are you feeling?</h2>
+ </div>
+ <div class="coach-mood-strip" id="coachMood"></div>
+ <p class="card-note" id="coachMoodNote">Tell me how you feel and I'll shape the day around you.</p>
+ </section>
+
+ <section class="card coach-rail-card">
+ <div class="card-head">
+ <h2 class="card-title">Coach preferences</h2>
+ </div>
+ <div class="coach-prefs" id="coachPrefs"></div>
+ </section>
+
+ <section class="card coach-rail-card">
+ <div class="card-head">
+ <h2 class="card-title">Advice I've saved</h2>
+ <span class="card-hint" id="coachAdviceCount">—</span>
+ </div>
+ <div id="coachAdvice" class="coach-advice"></div>
+ </section>
+
+ <p class="coach-foot">Luvli · a gentle life coach, built into Luvli.</p>
+ </aside>
+ </main>
+ </div>
+
+ <!-- Shared chrome so toasts, modals and hearts feel identical to Luvli -->
+ <div class="toast-stack" id="toastStack" aria-live="polite" aria-atomic="false"></div>
+ <div class="fx-layer" id="fxLayer" aria-hidden="true"></div>
+ <div class="modal-root" id="modalRoot"></div>
+
+ <!-- Dependency order: storage → scheduler → affirmations → the coach -->
+ <script src="js/icons.js"></script>
+ <script src="js/storage.js"></script>
+ <script src="js/scheduler.js"></script>
+ <script src="js/affirmations.js"></script>
+ <script src="js/auth.js"></script>
+ <script src="js/auth-guard.js"></script>
+  <!-- Real AI coach: set your endpoint in js/coach-config.js -->
+ <script src="js/coach-config.js"></script>
+ <script src="js/ai-coach.js"></script>
+</body>
+</html>

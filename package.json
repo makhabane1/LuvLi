@@ -1,0 +1,24 @@
+{
+  "name": "luvli",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Luvli ♡ — a gentle, local-first day-management companion in plain HTML, CSS and JavaScript.",
+  "homepage": "./index.html",
+  "keywords": ["productivity", "planner", "pomodoro", "vanilla-js", "local-first", "pwa"],
+  "license": "MIT",
+  "scripts": {
+    "start": "npx --yes http-server . -p 8080 -c-1",
+    "dev": "node tools/dev-server.js",
+    "setup": "node tools/setup.js",
+    "check": "node tools/check-static.js && node tools/check-css.js",
+    "test": "npm run test:logic && npm run test:account && npm run test:interaction && npm run test:personality",
+    "test:logic": "node tools/smoke-test.js",
+    "test:account": "node tools/auth-test.js",
+    "test:interaction": "node tools/run-with-timeout.js boot-test.js 45",
+    "test:personality": "node tools/run-with-timeout.js personality-test.js 45",
+    "verify": "npm run check && npm test"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

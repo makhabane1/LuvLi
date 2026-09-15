@@ -1,0 +1,51 @@
+/* =========================================================================
+   LUVLI ♡ — css/signup.css
+   -------------------------------------------------------------------------
+   The one or two things that are specific to signup.html. Everything shared
+   (the backdrop, the glass card, the fields, the strength meter, the
+   onboarding panels) lives in css/auth.css, so this file stays tiny.
+   ========================================================================= */
+
+/* The sign-up card leans a touch wider than the login card, because it holds
+   a name, an email, two passwords and the terms line. */
+.signup-card {
+  max-width: 1080px;
+}
+
+/* The "you're all set" state after the account is made. */
+.signup-success {
+  display: grid;
+  place-items: center;
+  padding: 8px 0 4px;
+}
+
+/* The onboarding steps carry a little more air than a plain form. */
+.signup-onb .onb-body {
+  gap: 18px;
+}
+.signup-onb .field {
+  max-width: 320px;
+}
+
+/* A friendly, quiet note above the terms checkbox. */
+.signup-terms-note {
+  font-size: 12px;
+  color: var(--muted);
+  line-height: 1.55;
+  padding: 11px 14px;
+  border-radius: var(--r-sm);
+  background: var(--glass-1);
+  border: 1px solid var(--hairline-2);
+}
+.signup-terms-note strong {
+  color: var(--text);
+  font-weight: 700;
+}
+
+/* On small screens the two password fields stack (auth.css does this too,
+   this keeps the sign-up page's own rhythm when it does). */
+@media (max-width: 560px) {
+  .signup-card .auth-panel {
+    padding: 20px 20px 26px;
+  }
+}

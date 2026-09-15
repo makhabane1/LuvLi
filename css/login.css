@@ -1,0 +1,88 @@
+/* =========================================================================
+   LUVLI ♡ — css/login.css
+   -------------------------------------------------------------------------
+   What is specific to login.html. It is intentionally a very short file: the
+   login screen should feel spacious and sophisticated, so its own rules are
+   mostly about air, not new components.
+   ========================================================================= */
+
+/* The login card is narrower and quieter than sign-up — a single column of
+   form, with the welcome side carrying the room. */
+.login-card {
+  max-width: 980px;
+}
+
+/* A touch more breathing room between the login fields. */
+.login-form {
+  gap: 16px;
+}
+.login-form .auth-sub {
+  margin-bottom: 2px;
+}
+
+/* "Welcome back." is the moment — give the heading its own scale. */
+.login-title {
+  font-size: clamp(1.6rem, 2.6vw, 2rem);
+  line-height: 1.1;
+  letter-spacing: -0.035em;
+}
+.login-lead-sub {
+  font-size: 15px;
+  color: var(--muted);
+  line-height: 1.6;
+  margin-top: -6px;
+  max-width: 40ch;
+}
+
+/* The row under the password: remember-me on the left, forgot on the right. */
+.login-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  flex-wrap: wrap;
+  margin-top: 2px;
+}
+.login-actions .switch {
+  margin: 0;
+}
+
+/* The "don't have an account" line, given a little prominence. */
+.login-switch {
+  font-size: 13.5px;
+  color: var(--text);
+  text-align: center;
+  padding-top: 16px;
+  border-top: 1px solid var(--hairline);
+}
+
+/* ---- the forgot-password / reset panel ---- */
+.reset-step[hidden] {
+  display: none;
+}
+.reset-step {
+  animation: fadeIn 0.32s var(--ease) both;
+}
+.reset-note {
+  font-size: 13px;
+  color: var(--muted);
+  line-height: 1.6;
+  padding: 12px 14px;
+  border-radius: var(--r-sm);
+  background: var(--glass-1);
+  border: 1px solid var(--hairline-2);
+}
+.reset-code {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 4px;
+}
+
+/* On the login page the welcome column can breathe a little wider. */
+@media (max-width: 900px) {
+  .login-card {
+    max-width: 520px;
+  }
+}

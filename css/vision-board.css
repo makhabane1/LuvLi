@@ -1,0 +1,427 @@
+/* =============================================================================
+   vision-board.css — Luvli Vision Board
+   -----------------------------------------------------------------------------
+   Only the pieces unique to this page. Everything else (colours, cards,
+   buttons, chips, inputs, toasts, modals, hearts) comes from the shared
+   design system in css/style.css.
+   ========================================================================== */
+
+/* =========================== 1. PAGE & TOP BAR =========================== */
+.vb-body {
+  min-height: 100vh;
+  min-height: 100dvh;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-body);
+  -webkit-font-smoothing: antialiased;
+}
+
+.vb-app {
+  position: relative;
+  z-index: 1;
+  max-width: 1500px;
+  margin: 0 auto;
+  padding: 18px clamp(14px, 3vw, 34px) 40px;
+}
+
+.vb-topbar {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px clamp(12px, 2vw, 20px);
+  margin-bottom: 20px;
+  background: var(--glass);
+  border: 1px solid var(--hairline);
+  border-radius: var(--r-lg);
+  box-shadow: var(--sheen), var(--shadow-sm), 0 4px 16px rgba(93, 45, 63, .04);
+  backdrop-filter: blur(20px) saturate(160%);
+  -webkit-backdrop-filter: blur(20px) saturate(160%);
+}
+
+.vb-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 14px 6px 6px;
+  border-radius: var(--r-pill);
+  color: var(--deep-rose);
+  text-decoration: none;
+  font-weight: 700;
+  font-size: 14px;
+  transition: background var(--speed) var(--ease), transform var(--speed) var(--ease);
+}
+.vb-back:hover { background: var(--surface-3); transform: translateX(-2px); }
+.vb-back-text { white-space: nowrap; }
+
+.vb-title { display: flex; align-items: center; gap: 12px; margin: 0 auto 0 0; }
+.vb-orb {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 16px;
+  background: var(--grad-aurora);
+  box-shadow: var(--sheen), var(--shadow-sm), 0 4px 14px rgba(224, 144, 172, .18);
+  animation: vbOrbFloat 5s var(--ease) infinite;
+}
+.vb-orb::after {
+  content: ""; position: absolute; inset: 0; border-radius: inherit;
+  background: linear-gradient(145deg, rgba(255,255,255,.4) 0%, transparent 45%);
+  pointer-events: none;
+}
+@keyframes vbOrbFloat {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-4px); }
+}
+.ico-orb { width: 22px; height: 22px; color: #fff; }
+
+.vb-title-text { display: flex; flex-direction: column; line-height: 1.15; }
+.vb-title-text strong {
+  font-family: var(--font-display);
+  font-size: 18px;
+  color: var(--ink);
+  letter-spacing: var(--tracking-tight);
+}
+.vb-title-text small { font-size: 12.5px; color: var(--muted); font-weight: 600; }
+
+.vb-top-right { display: flex; align-items: center; gap: 10px; }
+.ico-btn { width: 16px; height: 16px; flex: none; }
+
+/* =========================== 2. SHELL LAYOUT =========================== */
+.vb-shell {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* =========================== 3. INTRO CARD =========================== */
+.vb-intro {
+  text-align: center;
+  padding: clamp(20px, 3vw, 32px);
+  background: linear-gradient(150deg, var(--surface) 0%, var(--baby-pink) 50%, rgba(220, 196, 248, .12) 100%);
+}
+.vb-intro-title {
+  font-family: var(--font-display);
+  font-size: clamp(1.3rem, 2.8vw, 1.75rem);
+  color: var(--ink);
+  letter-spacing: var(--tracking-tight);
+  margin-bottom: 8px;
+}
+.vb-intro-sub {
+  font-size: 14.5px;
+  color: var(--muted);
+  max-width: 560px;
+  margin: 0 auto;
+  line-height: 1.6;
+}
+
+.vb-quick-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin-top: 18px;
+}
+.vb-quick-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 11px 18px;
+  border-radius: var(--r-sm);
+  background: var(--surface);
+  border: 1px solid var(--hairline-2);
+  box-shadow: var(--sheen), var(--shadow-xs);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+  cursor: pointer;
+  transition: transform var(--speed) var(--spring), box-shadow var(--speed) var(--ease), border-color var(--speed) var(--ease);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+.vb-quick-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--sheen), var(--shadow-md);
+  border-color: var(--soft-rose);
+}
+.vb-quick-ico { display: grid; place-items: center; width: 20px; height: 20px; color: var(--dusty-rose); }
+.vb-quick-ico svg { width: 100%; height: 100%; }
+.vb-quick-label { white-space: nowrap; }
+
+/* =========================== 4. BOARDS NAV =========================== */
+.vb-boards-section { margin-top: 4px; }
+.vb-section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+  flex-wrap: wrap;
+}
+.vb-section-title {
+  font-family: var(--font-display);
+  font-size: 1.15rem;
+  color: var(--ink);
+  letter-spacing: var(--tracking-tight);
+}
+.vb-section-tools { display: flex; align-items: center; gap: 8px; }
+
+.vb-boards-nav {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.vb-board-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 16px;
+  border-radius: var(--r-pill);
+  background: var(--surface);
+  border: 1px solid var(--hairline-2);
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--text);
+  cursor: pointer;
+  transition: all var(--speed) var(--ease);
+  box-shadow: var(--sheen);
+}
+.vb-board-chip:hover { border-color: var(--soft-rose); transform: translateY(-1px); }
+.vb-board-chip.is-active {
+  background: var(--grad-rose);
+  color: #fff;
+  border-color: transparent;
+  box-shadow: 0 2px 10px rgba(224, 144, 172, .2);
+}
+.vb-board-chip-count {
+  font-size: 11px;
+  font-weight: 700;
+  background: rgba(255,255,255,.25);
+  padding: 2px 7px;
+  border-radius: var(--r-pill);
+}
+.vb-board-chip:not(.is-active) .vb-board-chip-count {
+  background: var(--surface-3);
+  color: var(--muted);
+}
+
+/* =========================== 5. GRID =========================== */
+.vb-grid-section { margin-top: 4px; }
+
+.vb-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: clamp(40px, 8vw, 80px) 20px;
+}
+.vb-empty-art {
+  position: relative;
+  width: 120px;
+  height: 120px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--grad-pink);
+  margin-bottom: 20px;
+  box-shadow: var(--sheen), var(--shadow-md);
+}
+.vb-empty-heart {
+  font-size: 52px;
+  color: var(--dusty-rose);
+  animation: heartBeat 2.4s var(--ease) infinite;
+}
+@keyframes heartBeat {
+  0%, 100% { transform: scale(1); }
+  15% { transform: scale(1.15); }
+  30% { transform: scale(1); }
+  45% { transform: scale(1.1); }
+}
+.vb-empty-title {
+  font-family: var(--font-display);
+  font-size: 1.3rem;
+  color: var(--ink);
+  margin-bottom: 8px;
+}
+.vb-empty-text {
+  font-size: 14.5px;
+  color: var(--muted);
+  max-width: 380px;
+  line-height: 1.6;
+  margin-bottom: 18px;
+}
+
+/* ---- Masonry grid ---- */
+.vb-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 16px;
+  grid-auto-flow: dense;
+}
+
+.vb-item {
+  position: relative;
+  border-radius: var(--r-md);
+  overflow: hidden;
+  background: var(--surface);
+  border: 1px solid var(--hairline);
+  box-shadow: var(--sheen), var(--shadow-xs);
+  transition: transform var(--speed) var(--spring), box-shadow var(--speed) var(--ease);
+  animation: vbItemIn .4s var(--ease-out) both;
+  cursor: pointer;
+}
+.vb-item:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--sheen), var(--shadow-md);
+}
+@keyframes vbItemIn {
+  from { opacity: 0; transform: scale(.92) translateY(12px); }
+  to { opacity: 1; transform: none; }
+}
+
+.vb-item-img {
+  width: 100%;
+  display: block;
+  object-fit: cover;
+  min-height: 120px;
+  background: var(--surface-3);
+}
+.vb-item-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to top, rgba(46, 28, 38, .6) 0%, transparent 50%);
+  opacity: 0;
+  transition: opacity var(--speed) var(--ease);
+  display: flex;
+  align-items: flex-end;
+  padding: 12px;
+}
+.vb-item:hover .vb-item-overlay { opacity: 1; }
+.vb-item-note {
+  font-size: 12.5px;
+  color: #fff;
+  font-weight: 600;
+  line-height: 1.4;
+  text-shadow: 0 1px 3px rgba(0,0,0,.3);
+}
+
+.vb-item-actions {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  display: flex;
+  gap: 4px;
+  opacity: 0;
+  transition: opacity var(--speed) var(--ease);
+}
+.vb-item:hover .vb-item-actions { opacity: 1; }
+.vb-item-btn {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, .85);
+  border: none;
+  cursor: pointer;
+  color: var(--deep-rose);
+  font-size: 14px;
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  transition: background var(--speed) var(--ease), transform var(--speed) var(--spring);
+}
+.vb-item-btn:hover { background: #fff; transform: scale(1.1); }
+.vb-item-btn svg { width: 16px; height: 16px; }
+
+/* ---- Item sizes for visual variety ---- */
+.vb-item.tall { grid-row: span 8; }
+.vb-item.wide { grid-column: span 2; }
+.vb-item.big { grid-column: span 2; grid-row: span 8; }
+
+/* =========================== 6. LIGHTBOX =========================== */
+.vb-lightbox {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: rgba(46, 28, 38, .7);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  animation: fadeIn .25s var(--ease) both;
+}
+.vb-lightbox-img {
+  max-width: min(90vw, 800px);
+  max-height: 80vh;
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow-lg);
+}
+.vb-lightbox-close {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: rgba(255,255,255,.85);
+  border: none;
+  cursor: pointer;
+  color: var(--deep-rose);
+  font-size: 20px;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  transition: transform var(--speed) var(--spring);
+}
+.vb-lightbox-close:hover { transform: scale(1.1); }
+
+/* =========================== 7. MODAL OVERRIDES =========================== */
+.vb-modal-preview {
+  width: 100%;
+  max-height: 280px;
+  object-fit: contain;
+  border-radius: var(--r-sm);
+  margin-bottom: 16px;
+  background: var(--surface-3);
+}
+.vb-pinterest-hint {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px 14px;
+  border-radius: var(--r-sm);
+  background: var(--surface-2);
+  border: 1px solid var(--hairline);
+  font-size: 13px;
+  color: var(--muted);
+  margin-top: 12px;
+  line-height: 1.5;
+}
+.vb-pinterest-hint svg { flex: none; width: 18px; height: 18px; color: var(--dusty-rose); margin-top: 1px; }
+
+/* =========================== 8. RESPONSIVE =========================== */
+@media (max-width: 700px) {
+  .vb-back-text { display: none; }
+  .vb-top-right .btn-small { padding: 9px 12px; font-size: 13px; }
+  .vb-grid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
+  .vb-item.wide, .vb-item.big { grid-column: span 1; }
+  .vb-quick-actions { gap: 8px; }
+  .vb-quick-btn { padding: 10px 14px; font-size: 13px; }
+}
+
+@media (max-width: 420px) {
+  .vb-grid { grid-template-columns: repeat(2, 1fr); gap: 8px; }
+  .vb-topbar { padding: 10px 12px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .vb-orb, .vb-empty-heart { animation: none; }
+  .vb-item { animation: none; }
+}

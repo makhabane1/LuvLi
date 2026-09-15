@@ -1,0 +1,26 @@
+# Luvli — Netlify configuration
+#
+# This file makes the optional real-AI coach work: the static Luvli app is
+# published from the repo root, and netlify/functions/luvli-coach.js is served
+# at the tidy path /api/luvli-coach that js/coach-config.js points at.
+#
+# Nothing here is needed to run Luvli locally — it only matters when you deploy.
+# If you never deploy, or never set COACH_API_KEY, Luvli ignores all of this and
+# the coach uses its on-device brain.
+
+[build]
+  publish = "."
+  functions = "netlify/functions"
+
+# /api/luvli-coach  →  the serverless function
+[[redirects]]
+  from = "/api/luvli-coach"
+  to = "/.netlify/functions/luvli-coach"
+  status = 200
+
+# A gentle security header set for the static app
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"

@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<!--
+ Luvli Vision Board — dream it, pin it, become it.
+ -----------------------------------------------------------------------------
+ A beautiful vision board where you can collect images that inspire you,
+ set goals, and visualize your dream life. Pull pictures directly from
+ Pinterest by pasting a board or pin URL.
+
+ Files that make this page:
+ • vision-board.html  -> structure only
+ • css/vision-board.css  -> everything you see here (uses the shared tokens)
+ • css/style.css  -> the one design system (colours, cards, buttons…)
+ • js/storage.js  -> the same saved life-data as the main app
+ • js/vision-board.js  -> the vision board: Pinterest fetch, layout, saving
+ ----------------------------------------------------------------------------
+-->
+<html lang="en" data-theme="rose">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Luvli — your vision board</title>
+  <meta name="description" content="Luvli's vision board — dream it, pin it, become it. Collect inspiring images and visualize your goals." />
+  <meta name="theme-color" content="#FFF5F8" />
+  <link rel="manifest" href="manifest.json" />
+  <link rel="icon" href="assets/icon.svg" type="image/svg+xml" />
+  <link rel="apple-touch-icon" href="assets/icon-192.png" />
+  <link rel="stylesheet" href="css/style.css" />
+  <link rel="stylesheet" href="css/vision-board.css" />
+</head>
+<body class="vb-body">
+
+  <a class="skip-link" href="#vbMain">Skip to your vision board</a>
+
+  <p class="sr-only" id="vbAnnouncer" aria-live="polite" aria-atomic="true"></p>
+
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+    <defs>
+      <linearGradient id="gradRose" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" stop-color="#F7CBD9" />
+        <stop offset="55%" stop-color="#EFA8BF" />
+        <stop offset="100%" stop-color="#D98FA8" />
+      </linearGradient>
+    </defs>
+  </svg>
+
+  <div class="bg-decor" aria-hidden="true">
+    <span class="blob blob-1"></span>
+    <span class="blob blob-2"></span>
+    <span class="blob blob-3"></span>
+  </div>
+
+  <div class="vb-app">
+
+    <!-- ============================ TOP BAR ============================ -->
+    <header class="vb-topbar">
+      <a class="vb-back" href="index.html" title="Back to Luvli">
+        <span class="brand-mark small" aria-hidden="true"></span>
+        <span class="vb-back-text">Back to Luvli</span>
+      </a>
+
+      <div class="vb-title">
+        <span class="vb-orb" aria-hidden="true">
+          <svg class="ico-orb" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="3.5" width="17" height="17" rx="3"/><circle cx="8.5" cy="9" r="2"/><path d="M20.5 16l-5-5-5 5M14.5 16l-3-3-5 5"/></svg>
+        </span>
+        <span class="vb-title-text">
+          <strong>Vision Board</strong>
+          <small>Dream it, pin it, become it.</small>
+        </span>
+      </div>
+
+      <div class="vb-top-right">
+        <button class="btn btn-soft btn-small" id="vbAddBtn" type="button">Add image</button>
+        <button class="btn btn-primary btn-small" id="vbPinterestBtn" type="button">Pinterest</button>
+      </div>
+    </header>
+
+    <main class="vb-shell" id="vbMain">
+      <section class="card vb-intro">
+        <div class="vb-intro-head">
+          <h2 class="vb-intro-title">Your vision, beautifully arranged.</h2>
+          <p class="vb-intro-sub">Add images that speak to your goals, your dreams, your future self. Paste a Pinterest board or pin URL to pull in pictures instantly, or upload your own.</p>
+        </div>
+        <div class="vb-quick-actions">
+          <button class="vb-quick-btn" type="button" data-quick="pinterest">
+            <span class="vb-quick-ico" data-ico="pinterest"></span>
+            <span class="vb-quick-label">Paste Pinterest URL</span>
+          </button>
+          <button class="vb-quick-btn" type="button" data-quick="upload">
+            <span class="vb-quick-ico" data-ico="image"></span>
+            <span class="vb-quick-label">Add from device</span>
+          </button>
+          <button class="vb-quick-btn" type="button" data-quick="url">
+            <span class="vb-quick-ico" data-ico="link"></span>
+            <span class="vb-quick-label">Paste image URL</span>
+          </button>
+          <button class="vb-quick-btn" type="button" data-quick="board">
+            <span class="vb-quick-ico" data-ico="grid"></span>
+            <span class="vb-quick-label">New board</span>
+          </button>
+        </div>
+      </section>
+
+      <section class="vb-boards-section">
+        <div class="vb-section-head">
+          <h2 class="vb-section-title">Your boards</h2>
+          <div class="vb-section-tools">
+            <span class="chip chip-soft" id="vbBoardCount">0 boards</span>
+            <span class="chip chip-soft" id="vbItemCount">0 items</span>
+          </div>
+        </div>
+        <div id="vbBoardsNav" class="vb-boards-nav"></div>
+      </section>
+
+      <section class="vb-grid-section">
+        <div class="vb-section-head">
+          <h2 class="vb-section-title" id="vbCurrentBoardTitle">All items</h2>
+          <div class="vb-section-tools">
+            <button class="btn btn-ghost btn-small" id="vbLayoutBtn" type="button" title="Toggle layout"><span data-ico="grid"></span></button>
+            <button class="btn btn-ghost btn-small" id="vbShuffleBtn" type="button" title="Shuffle"><span data-ico="sparkles"></span></button>
+          </div>
+        </div>
+        <div class="vb-empty" id="vbEmpty">
+          <div class="vb-empty-art"><span class="vb-empty-heart">♡</span></div>
+          <h3 class="vb-empty-title">Your vision board is waiting.</h3>
+          <p class="vb-empty-text">Add your first image to begin. pull pictures from Pinterest, upload your own, or paste any image URL.</p>
+          <button class="btn btn-primary" id="vbEmptyAddBtn" type="button">Add your first image</button>
+        </div>
+        <div class="vb-grid" id="vbGrid"></div>
+      </section>
+    </main>
+
+    <p class="vb-foot">Luvli · a gentle companion for your dreams.</p>
+  </div>
+
+  <div class="toast-stack" id="toastStack" aria-live="polite" aria-atomic="false"></div>
+  <div class="fx-layer" id="fxLayer" aria-hidden="true"></div>
+  <div class="modal-root" id="modalRoot"></div>
+  <input type="file" id="vbFileInput" accept="image/*" class="sr-only" multiple />
+
+   <script src="js/icons.js"></script>
+   <script src="js/storage.js"></script>
+   <script src="js/auth.js"></script>
+   <script src="js/auth-guard.js"></script>
+   <script src="js/vision-board.js"></script>
+  </body>
+</html>

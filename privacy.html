@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<!--
+ Luvli ♡ — Privacy Policy
+ -----------------------------------------------------------------------------
+ A plain-language privacy page. It is a real destination for the "Privacy Policy"
+ link on login.html and signup.html (see data-legal-pages on <body>).
+ Files that make this page:
+ • privacy.html  -> structure only
+ • css/style.css  -> the shared design system
+ • css/auth.css  -> the shared account look (backdrop, card, links)
+ • css/legal.css  -> the reading style for long-form text
+ -->
+<html lang="en" data-theme="rose">
+<head>
+ <meta charset="UTF-8" />
+ <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+ <title>Privacy Policy — Luvli</title>
+ <meta name="description" content="What Luvli keeps, where it keeps it, and what never leaves your device." />
+ <meta name="theme-color" content="#FDF7FB" />
+ <link rel="manifest" href="manifest.json" />
+ <link rel="icon" href="assets/icon.svg" type="image/svg+xml" />
+ <link rel="apple-touch-icon" href="assets/icon-192.png" />
+ <link rel="stylesheet" href="css/style.css" />
+ <link rel="stylesheet" href="css/auth.css" />
+ <link rel="stylesheet" href="css/legal.css" />
+</head>
+<body data-legal-pages="1">
+
+ <div class="auth-shell">
+
+    <div class="auth-bg" aria-hidden="true">
+      <div class="auth-blobs">
+        <span class="auth-blob b1"></span>
+        <span class="auth-blob b2"></span>
+        <span class="auth-blob b3"></span>
+        <span class="auth-blob b4"></span>
+      </div>
+    </div>
+
+    <div class="auth-topbar">
+      <a class="auth-link" href="login.html">
+        <span data-ico="arrow-right" aria-hidden="true"></span> Back to sign in
+      </a>
+      <span class="auth-trust-chip shimmer"><span data-ico="lock" aria-hidden="true"></span> Private by design</span>
+    </div>
+
+    <section class="auth-card legal-card" aria-labelledby="legalTitle">
+      <header class="auth-brand">
+        <span class="auth-mark" data-ico="cpu" aria-hidden="true"></span>
+        <span class="auth-brand-text">
+          <span class="brand-word">Luvli</span>
+          <small>Make every day feel luvli.</small>
+        </span>
+      </header>
+
+      <h1 class="auth-title" id="legalTitle">Privacy Policy</h1>
+      <p class="auth-sub">The short version: your day stays on your device. Last updated <span id="legalUpdated">2026</span>.</p>
+
+      <div class="legal-body">
+        <h2>What Luvli keeps, and where</h2>
+        <p>Everything — your account, your plan, your focus history and your check-ins — is stored
+        in your own browser, in <code>localStorage</code> under the key <code>luvli.state.v1</code>.
+        It does not go to us. There is no Luvli server holding your day.</p>
+
+        <h2>Your password</h2>
+        <p>Luvli never stores your password. It keeps only a <strong>salted SHA-256 hash</strong>,
+        computed in your browser with Web Crypto. Signing in with Google means Google holds that
+        credential, never Luvli.</p>
+
+        <h2>The device backup</h2>
+        <p>A quiet IndexedDB mirror keeps a copy on the same device, so you can recover your data
+        if something goes wrong. It never leaves your machine.</p>
+
+        <h2>When data can leave your device</h2>
+        <p>Only ever because you asked it to, and only to somewhere you chose:</p>
+        <ul>
+          <li><strong>Sync</strong> — off by default. If you enter an endpoint you control, a copy
+          of your JSON is sent there.</li>
+          <li><strong>The AI coach</strong> — off by default. If you switch it to a language model,
+          the message you send (with a short summary of your day) is forwarded to that model so it
+          can reply. Your model API key lives on your own serverless function, never in the
+          browser.</li>
+        </ul>
+        <p>In both cases, nothing is sent until you configure it yourself.</p>
+
+        <h2>What Luvli does not do</h2>
+        <ul>
+          <li>No analytics or tracking scripts.</li>
+          <li>No advertising, and no selling of data — ever.</li>
+          <li>No reading of your data by us. We cannot: it is not on our servers.</li>
+        </ul>
+
+        <h2>Distraction support</h2>
+        <p>The study-app and distraction lists are <strong>preferences only</strong>. Luvli never
+        inspects, closes or blocks other applications.</p>
+
+        <h2>Your control</h2>
+        <p>From <strong>Settings → Your data</strong> you can export everything as JSON, import a
+        backup, or erase it all. Clearing your browser's storage for this site removes Luvli
+        entirely.</p>
+
+        <h2>Children</h2>
+        <p>Luvli is not directed at children. If you are below the age of digital consent in your
+        country, please use it with a parent or guardian.</p>
+
+        <h2>Contact</h2>
+        <p>Questions about privacy? Add your own contact details here before publishing.</p>
+
+        <p class="legal-note">
+          This is a plain-language template for a self-hosted Luvli. Review it, and adapt it to
+          your own jurisdiction and business, before you rely on it.
+        </p>
+      </div>
+
+      <p class="auth-fine">See also our <a class="auth-link" href="terms.html">Terms of use</a>.</p>
+    </section>
+
+    <p class="auth-foot">Luvli — make every day feel intentional.</p>
+ </div>
+
+ <script src="js/icons.js"></script>
+</body>
+</html>

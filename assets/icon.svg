@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512" role="img" aria-label="Luvli">
+  <title>Luvli ♡</title>
+  <defs>
+    <linearGradient id="luvliBg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FFF9F7" />
+      <stop offset="55%" stop-color="#FCE7F0" />
+      <stop offset="100%" stop-color="#EFA8BF" />
+    </linearGradient>
+    <linearGradient id="luvliHeart" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#F7CBD9" />
+      <stop offset="60%" stop-color="#EFA8BF" />
+      <stop offset="100%" stop-color="#D98FA8" />
+    </linearGradient>
+  </defs>
+
+  <!-- Soft rounded background -->
+  <rect width="512" height="512" rx="116" fill="url(#luvliBg)" />
+
+  <!-- Gentle sparkle dots -->
+  <circle cx="376" cy="136" r="11" fill="#FFFFFF" opacity=".75" />
+  <circle cx="132" cy="380" r="8" fill="#FFFFFF" opacity=".6" />
+
+  <!-- The heart -->
+  <path fill="url(#luvliHeart)"
+    d="M256 402c-6 0-12-2-16-6l-96-92c-34-33-40-86-13-124 25-36 74-45 109-21 35-24 84-15 109 21 27 38 21 91-13 124l-96 92c-4 4-10 6-16 6z" />
+
+  <!-- Highlight -->
+  <path fill="#FFFFFF" opacity=".55"
+    d="M196 214c-14 0-26 7-33 19-4 7-6 15-6 23 0 6 8 9 12 5 8-9 18-15 30-16 9-1 15-9 13-17-1-8-8-14-16-14z" />
+</svg>

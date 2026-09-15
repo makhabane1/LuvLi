@@ -1,0 +1,150 @@
+<!doctype html>
+<!--
+ Luvli ♡ — Terms of use
+ -----------------------------------------------------------------------------
+ A plain-language terms page. It is a real destination for the "Terms" link on
+ login.html and signup.html (see data-legal-pages on <body>).
+ Files that make this page:
+ • terms.html  -> structure only
+ • css/style.css  -> the shared design system
+ • css/auth.css  -> the shared account look (backdrop, card, links)
+ • css/legal.css  -> the reading style for long-form text
+ -->
+<html lang="en" data-theme="rose">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover"
+    />
+    <title>Terms of use — Luvli</title>
+    <meta
+      name="description"
+      content="The plain-language terms for using Luvli."
+    />
+    <meta name="theme-color" content="#FDF7FB" />
+    <link rel="manifest" href="manifest.json" />
+    <link rel="icon" href="assets/icon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="assets/icon-192.png" />
+    <link rel="stylesheet" href="css/style.css" />
+    <link rel="stylesheet" href="css/auth.css" />
+    <link rel="stylesheet" href="css/legal.css" />
+  </head>
+  <body data-legal-pages="1">
+    <div class="auth-shell">
+      <div class="auth-bg" aria-hidden="true">
+        <div class="auth-blobs">
+          <span class="auth-blob b1"></span>
+          <span class="auth-blob b2"></span>
+          <span class="auth-blob b3"></span>
+          <span class="auth-blob b4"></span>
+        </div>
+      </div>
+
+      <div class="auth-topbar">
+        <a class="auth-link" href="login.html">
+          <span data-ico="arrow-right" aria-hidden="true"></span> Back to sign
+          in
+        </a>
+        <span class="auth-trust-chip shimmer"
+          ><span data-ico="lock" aria-hidden="true"></span> Private by
+          design</span
+        >
+      </div>
+
+      <section class="auth-card legal-card" aria-labelledby="legalTitle">
+        <header class="auth-brand">
+          <span class="auth-mark" data-ico="cpu" aria-hidden="true"></span>
+          <span class="auth-brand-text">
+            <span class="brand-word">Luvli</span>
+            <small>Make every day feel luvli.</small>
+          </span>
+        </header>
+
+        <h1 class="auth-title" id="legalTitle">Terms of use</h1>
+        <p class="auth-sub">
+          Plain language, no traps. Last updated
+          <span id="legalUpdated">2026</span>.
+        </p>
+
+        <div class="legal-body">
+          <h2>1. What Luvli is</h2>
+          <p>
+            Luvli is a personal day-management companion. It helps you plan your
+            day, focus, and keep a gentle record of how things are going. It is
+            a wellbeing and productivity tool — <strong>not</strong> a medical
+            device, and not a substitute for professional care.
+          </p>
+
+          <h2>2. Your account</h2>
+          <p>
+            By default Luvli keeps your account and everything else on your own
+            device. You are responsible for your password and for the device it
+            lives on. If you sign in with Google, Google's own terms also apply
+            to that sign-in.
+          </p>
+
+          <h2>3. Your data is yours</h2>
+          <p>
+            Your plan, your focus history and your check-ins belong to you.
+            Luvli does not sell them, and does not send them anywhere unless you
+            explicitly configure a sync endpoint or the AI coach. You can export
+            or erase everything at any time from
+            <strong>Settings → Your data</strong>.
+          </p>
+
+          <h2>4. The AI coach</h2>
+          <p>
+            If you switch the coach to a language model, messages you send are
+            forwarded to that model to produce a reply. The coach offers
+            suggestions and encouragement — it is not professional, medical,
+            legal or financial advice. Always use your own judgement, and turn
+            to a qualified professional for anything serious.
+          </p>
+
+          <h2>5. If you are in crisis</h2>
+          <p>
+            Luvli cannot help in an emergency. If you are in danger or thinking
+            about harming yourself, please contact your local emergency number
+            or a crisis line in your country right away.
+          </p>
+
+          <h2>6. Acceptable use</h2>
+          <p>
+            Please don't use Luvli to break the law, to harm others, or to
+            attempt to disrupt the service. If you self-host it, you are
+            responsible for how you run it.
+          </p>
+
+          <h2>7. No warranty</h2>
+          <p>
+            Luvli is provided "as is". It is offered without warranties of any
+            kind. We work hard to keep it reliable, but we can't promise it will
+            always be available or free of mistakes.
+          </p>
+
+          <h2>8. Changes</h2>
+          <p>
+            These terms may be updated as Luvli grows. When they change
+            materially, the date at the top of this page changes with them.
+          </p>
+
+          <p class="legal-note">
+            This is a plain-language template for a self-hosted Luvli. Review
+            it, and adapt it to your own jurisdiction and business, before you
+            rely on it.
+          </p>
+        </div>
+
+        <p class="auth-fine">
+          See also our
+          <a class="auth-link" href="privacy.html">Privacy Policy</a>.
+        </p>
+      </section>
+
+      <p class="auth-foot">Luvli — make every day feel intentional.</p>
+    </div>
+
+    <script src="js/icons.js"></script>
+  </body>
+</html>
