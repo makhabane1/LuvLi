@@ -479,6 +479,13 @@ const AuthUI = (() => {
   function initLinks() {
     document.querySelectorAll('[data-inline-nav]').forEach((link) => {
       const kind = link.getAttribute('data-inline-nav');
+      if (kind === 'login' || kind === 'signup') {
+        link.addEventListener('click', (event) => {
+          event.preventDefault();
+          location.href = PAGES[kind];
+        });
+        return;
+      }
       if (kind === 'terms' || kind === 'privacy') {
         link.addEventListener('click', (event) => {
           event.preventDefault();
