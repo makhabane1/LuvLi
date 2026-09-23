@@ -189,9 +189,11 @@ const SupabaseAuthProvider = (() => {
   /* --------------------------------------------------------- update ------ */
 
   /**
-   * Rename / restyle the signed-in account. Stored in Supabase's own
-   * user_metadata for now — Phase 5 moves this onto the `profiles` table
-   * instead, once the rest of the app's data lives there too.
+   * Rename / restyle the signed-in account. Written to Supabase Auth's own
+   * user_metadata (so Auth.current().name updates immediately) AND to the
+   * `profiles` table (Phase 5's source of truth for state.profile.name,
+   * which every day-planning screen reads) — kept in step here rather than
+   * waiting for the next full sync pull.
    */
   function update(patch) {
     const account = current();
@@ -204,6 +206,15 @@ const SupabaseAuthProvider = (() => {
     return client().auth.updateUser({ data }).then(({ data: result, error }) => {
       if (error) return account;
       cachedAccount = mapUser(result.user);
+
+      const profileRow = { id: account.id };
+      if (data.name) profileRow.name = data.name;
+      if (data.avatar) { profileRow.avatar_color = data.avatar.color; profileRow.avatar_shape = data.avatar.shape; }
+      client().from('profiles').upsert([profileRow], { onConflict: 'id' }).then(() => {});
+
+      if (data.name && typeof Storage !== 'undefined') {
+        Storage.update((draft) => { draft.profile.name = data.name; }, 'settings', { undo: false });
+      }
       return cachedAccount;
     });
   }

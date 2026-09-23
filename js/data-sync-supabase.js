@@ -25,6 +25,8 @@
 const SupabaseSync = (() => {
   let lastTasksJSON = null;
   let lastBacklogJSON = null;
+  let lastSettingsJSON = null;
+  let lastProfileName = null;
   let syncing = false;
   let pendingAgain = false;
 
@@ -106,6 +108,74 @@ const SupabaseSync = (() => {
     };
   }
 
+  function settingsToRow(state, uid) {
+    const s = state.settings;
+    return {
+      user_id: uid,
+      wake_time: s.wakeTime,
+      sleep_time: s.sleepTime,
+      time_format: s.timeFormat,
+      focus_length: s.focusLength,
+      break_length: s.breakLength,
+      long_break_length: s.longBreakLength,
+      auto_break: s.autoBreak,
+      focus_fullscreen: s.focusFullscreen,
+      focus_sound: s.focusSound,
+      buffer_minutes: s.bufferMinutes,
+      max_planned_hours: s.maxPlannedHours,
+      protect_breaks: s.protectBreaks,
+      auto_optimize: s.autoOptimize,
+      theme: s.theme,
+      reduce_motion: s.reduceMotion,
+      notifications_enabled: s.notifications.enabled,
+      notifications_lead_minutes: s.notifications.leadMinutes,
+      notifications_evening: s.notifications.evening,
+      notifications_celebrate: s.notifications.celebrate,
+      notifications_prompt_dismissed: s.notifications.promptDismissed,
+      affirmations_during_focus: s.affirmations.duringFocus,
+      affirmation_categories: s.affirmations.categories,
+      study_apps: state.studyApps,
+      distraction_apps: state.distractionApps,
+      onboarding: s.onboarding
+    };
+  }
+
+  /** Applies a settings row onto a Storage draft (used by both pull and the initial merge). */
+  function applySettingsRow(draft, row) {
+    Object.assign(draft.settings, {
+      wakeTime: (row.wake_time || '').slice(0, 5),
+      sleepTime: (row.sleep_time || '').slice(0, 5),
+      timeFormat: row.time_format,
+      focusLength: row.focus_length,
+      breakLength: row.break_length,
+      longBreakLength: row.long_break_length,
+      autoBreak: row.auto_break,
+      focusFullscreen: row.focus_fullscreen,
+      focusSound: row.focus_sound,
+      bufferMinutes: row.buffer_minutes,
+      maxPlannedHours: row.max_planned_hours,
+      protectBreaks: row.protect_breaks,
+      autoOptimize: row.auto_optimize,
+      theme: row.theme,
+      reduceMotion: row.reduce_motion
+    });
+    draft.settings.notifications = {
+      enabled: row.notifications_enabled,
+      leadMinutes: row.notifications_lead_minutes,
+      evening: row.notifications_evening,
+      celebrate: row.notifications_celebrate,
+      promptDismissed: row.notifications_prompt_dismissed
+    };
+    draft.settings.affirmations = {
+      duringFocus: row.affirmations_during_focus,
+      categories: row.affirmation_categories && row.affirmation_categories.length
+        ? row.affirmation_categories : draft.settings.affirmations.categories
+    };
+    if (row.onboarding && row.onboarding.completed) draft.settings.onboarding = row.onboarding;
+    if (row.study_apps && row.study_apps.length) draft.studyApps = row.study_apps;
+    if (row.distraction_apps && row.distraction_apps.length) draft.distractionApps = row.distraction_apps;
+  }
+
   /* -------------------------------------------------------------- push --- */
 
   /** Upsert every current row, then delete whatever is no longer local. */
@@ -124,6 +194,16 @@ const SupabaseSync = (() => {
 
   function pushTasks(tasks, uid) { return syncTable('tasks', tasks.map((t) => taskToRow(t, uid)), uid); }
   function pushBacklog(items, uid) { return syncTable('backlog', items.map((b) => backlogToRow(b, uid)), uid); }
+
+  function pushSettings(state, uid) {
+    return client().from('settings').upsert([settingsToRow(state, uid)], { onConflict: 'user_id' })
+      .then(({ error }) => { if (error) throw error; });
+  }
+
+  function pushProfileName(name, uid) {
+    return client().from('profiles').upsert([{ id: uid, name }], { onConflict: 'id' })
+      .then(({ error }) => { if (error) throw error; });
+  }
 
   function notifySyncFailed() {
     if (window.UI && typeof UI.toast === 'function') {
@@ -144,9 +224,13 @@ const SupabaseSync = (() => {
     const state = Storage.get();
     const tasksJSON = JSON.stringify(state.tasks);
     const backlogJSON = JSON.stringify(state.backlog);
+    const settingsJSON = JSON.stringify(settingsToRow(state, uid));
+    const profileName = state.profile.name;
     const tasksChanged = tasksJSON !== lastTasksJSON;
     const backlogChanged = backlogJSON !== lastBacklogJSON;
-    if (!tasksChanged && !backlogChanged) return;
+    const settingsChanged = settingsJSON !== lastSettingsJSON;
+    const profileChanged = profileName !== lastProfileName;
+    if (!tasksChanged && !backlogChanged && !settingsChanged && !profileChanged) return;
 
     if (syncing) { pendingAgain = true; return; }
     syncing = true;
@@ -154,6 +238,8 @@ const SupabaseSync = (() => {
     const jobs = [];
     if (tasksChanged) jobs.push(pushTasks(state.tasks, uid).then(() => { lastTasksJSON = tasksJSON; }));
     if (backlogChanged) jobs.push(pushBacklog(state.backlog, uid).then(() => { lastBacklogJSON = backlogJSON; }));
+    if (settingsChanged) jobs.push(pushSettings(state, uid).then(() => { lastSettingsJSON = settingsJSON; }));
+    if (profileChanged) jobs.push(pushProfileName(profileName, uid).then(() => { lastProfileName = profileName; }));
 
     Promise.all(jobs).catch((err) => {
       console.error('Luvli: could not sync to Supabase', err);
@@ -179,32 +265,63 @@ const SupabaseSync = (() => {
 
     return Promise.all([
       client().from('tasks').select('*').eq('user_id', uid),
-      client().from('backlog').select('*').eq('user_id', uid)
-    ]).then(([tasksRes, backlogRes]) => {
+      client().from('backlog').select('*').eq('user_id', uid),
+      client().from('settings').select('*').eq('user_id', uid).maybeSingle(),
+      client().from('profiles').select('*').eq('id', uid).maybeSingle()
+    ]).then(([tasksRes, backlogRes, settingsRes, profileRes]) => {
       if (tasksRes.error) throw tasksRes.error;
       if (backlogRes.error) throw backlogRes.error;
+      if (settingsRes.error) throw settingsRes.error;
+      if (profileRes.error) throw profileRes.error;
 
       const cloudTasks = tasksRes.data.map(rowToTask);
       const cloudBacklog = backlogRes.data.map(rowToBacklog);
       const state = Storage.get();
       const localHasData = (state.tasks && state.tasks.length) || (state.backlog && state.backlog.length);
       const cloudIsEmpty = !cloudTasks.length && !cloudBacklog.length;
+      const pushJobs = [];
 
       if (cloudIsEmpty && localHasData) {
         lastTasksJSON = JSON.stringify([]);
         lastBacklogJSON = JSON.stringify([]);
-        return Promise.all([
+        pushJobs.push(
           pushTasks(state.tasks, uid).then(() => { lastTasksJSON = JSON.stringify(state.tasks); }),
           pushBacklog(state.backlog, uid).then(() => { lastBacklogJSON = JSON.stringify(state.backlog); })
-        ]).then(() => {});
+        );
+      } else {
+        Storage.update((draft) => {
+          draft.tasks = cloudTasks;
+          draft.backlog = cloudBacklog;
+        }, 'supabase-pull', { undo: false });
+        lastTasksJSON = JSON.stringify(cloudTasks);
+        lastBacklogJSON = JSON.stringify(cloudBacklog);
       }
 
-      Storage.update((draft) => {
-        draft.tasks = cloudTasks;
-        draft.backlog = cloudBacklog;
-      }, 'supabase-pull', { undo: false });
-      lastTasksJSON = JSON.stringify(cloudTasks);
-      lastBacklogJSON = JSON.stringify(cloudBacklog);
+      // Settings: the cloud row always exists (the sign-up trigger creates
+      // it), so "empty" isn't a useful signal the way it is for
+      // tasks/backlog. Instead: has this account actually finished
+      // onboarding in the cloud yet? If not, but this device has, the
+      // device's settings are the real ones — push them up. Otherwise pull.
+      const cloudOnboarded = Boolean(settingsRes.data && settingsRes.data.onboarding && settingsRes.data.onboarding.completed);
+      const localOnboarded = Boolean(state.settings.onboarding && state.settings.onboarding.completed);
+
+      if (settingsRes.data && (cloudOnboarded || !localOnboarded)) {
+        Storage.update((draft) => applySettingsRow(draft, settingsRes.data), 'supabase-pull', { undo: false });
+        lastSettingsJSON = JSON.stringify(settingsToRow(Storage.get(), uid));
+      } else {
+        pushJobs.push(pushSettings(state, uid).then(() => { lastSettingsJSON = JSON.stringify(settingsToRow(state, uid)); }));
+      }
+
+      if (profileRes.data && profileRes.data.name) {
+        Storage.update((draft) => { draft.profile.name = profileRes.data.name; }, 'supabase-pull', { undo: false });
+        lastProfileName = profileRes.data.name;
+      } else if (state.profile.name) {
+        pushJobs.push(pushProfileName(state.profile.name, uid).then(() => { lastProfileName = state.profile.name; }));
+      } else {
+        lastProfileName = state.profile.name;
+      }
+
+      return Promise.all(pushJobs).then(() => {});
     });
   }
 
