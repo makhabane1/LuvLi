@@ -420,6 +420,18 @@ const Auth = (() => {
     return publicView(account);
   }
 
+  /** Erase the signed-in account's record and sign out. Local-provider counterpart to a real backend's account deletion. */
+  function deleteAccount() {
+    const account = current();
+    if (!account) return Promise.resolve({ ok: false, errors: { email: 'You are not signed in.' } });
+    const slice = data();
+    slice.accounts = slice.accounts.filter((a) => a.id !== account.id);
+    slice.session = null;
+    Storage.save();
+    Storage.emit('auth');
+    return Promise.resolve({ ok: true });
+  }
+
   /* --------------------------- password strength --------------------------- */
 
   /**
@@ -585,6 +597,7 @@ const Auth = (() => {
     requestReset,
     resetPassword,
     update: (patch) => update(patch),
+    deleteAccount: () => deleteAccount(),
     isLocal: true
   };
 
@@ -655,6 +668,7 @@ const Auth = (() => {
     requestReset: dispatch('requestReset'),
     resetPassword: dispatch('resetPassword'),
     update: dispatch('update'),
+    deleteAccount: dispatch('deleteAccount'),
     // Local-only helpers: form validation/strength meter never touch a
     // backend, and hasAccounts/accounts/exists only make sense for the local
     // provider's own account list (a real backend has no such listing here).

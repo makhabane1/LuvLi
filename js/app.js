@@ -2572,6 +2572,40 @@ const App = (() => {
    });
  }
 
+ /** Delete the account for good — a much stronger warning than signing out. */
+ function deleteAccount() {
+   const account = Auth.current();
+   UI.confirm({
+     title: 'Delete your Luvli account?',
+     sub: 'This cannot be undone.',
+     bodyHtml: '<p class="card-note">Every activity, session, subject and setting tied to ' +
+       esc((account && account.email) || 'this account') +
+       ' is permanently deleted — not just on this device, everywhere. There is no way back in afterwards.</p>',
+     confirmLabel: 'Delete my account',
+     confirmAction: 'auth-delete-account-confirm',
+     variant: 'danger'
+   });
+ }
+
+ function confirmDeleteAccount() {
+   const button = document.querySelector('[data-action="auth-delete-account-confirm"]');
+   if (button) { button.disabled = true; button.textContent = 'Deleting…'; }
+   Promise.resolve(Auth.deleteAccount()).then((result) => {
+     if (!result || !result.ok) {
+       if (button) { button.disabled = false; button.textContent = 'Delete my account'; }
+       UI.toast({
+         icon: 'cloud-off',
+         title: 'Could not delete your account',
+         body: (result && result.errors && result.errors.email) || 'Please try again.'
+       });
+       return;
+     }
+     UI.closeModal();
+     try { sessionStorage.setItem('luvli.auth.note', 'Your Luvli account has been deleted. Take care ♡'); } catch (err) { /* private mode */ }
+     location.href = 'login.html';
+   });
+ }
+
  /** Let the signed-in person rename themselves. */
  function editAccountName() {
    const account = Auth.current();
@@ -2872,6 +2906,8 @@ const App = (() => {
  case 'auth-signout-confirm':  confirmSignOut(); break;
  case 'auth-name-edit':  editAccountName(); break;
  case 'auth-name-save':  saveAccountName(); break;
+ case 'auth-delete-account':  deleteAccount(); break;
+ case 'auth-delete-account-confirm':  confirmDeleteAccount(); break;
 
  /* --- everywhere --- */
  case 'add-activity':  UI.closeModal(); view.date = view.date || Utils.todayKey(); go('day'); openTaskModal(null, view.date); break;

@@ -219,6 +219,32 @@ const SupabaseAuthProvider = (() => {
     });
   }
 
+  /* ----------------------------------------------- delete account -------
+     Supabase's browser SDK has no self-delete call — only the Admin API can
+     delete a user, and that needs the service-role key, which must never
+     reach the browser. netlify/functions/delete-account.js holds that key
+     server-side and verifies the caller's own session token before
+     deleting, so this just calls it with the current access token.
+  */
+  function deleteAccount() {
+    return client().auth.getSession().then(({ data }) => {
+      const token = data && data.session && data.session.access_token;
+      if (!token) return { ok: false, errors: { email: 'You are not signed in.' } };
+
+      return fetch('/api/delete-account', {
+        method: 'POST',
+        headers: { Authorization: 'Bearer ' + token }
+      }).then((res) => res.json().catch(() => ({})).then((body) => ({ res, body })))
+        .then(({ res, body }) => {
+          if (!res.ok) {
+            return { ok: false, errors: { email: (body && body.error) || 'Could not delete the account. Please try again.' } };
+          }
+          cachedAccount = null;
+          return { ok: true };
+        });
+    }).catch(() => ({ ok: false, errors: { email: 'Something went wrong. Please try again.' } }));
+  }
+
   /* --------------------------------------------------- Google OAuth ------
      Supabase's real Google sign-in is a full-page redirect, not a popup with
      an identity object handed back synchronously: the browser navigates to
@@ -249,6 +275,7 @@ const SupabaseAuthProvider = (() => {
     requestReset,
     resetPassword,
     update,
+    deleteAccount,
     onPasswordRecovery,
     signInWithOAuthRedirect
   };

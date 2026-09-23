@@ -18,6 +18,12 @@
   to = "/.netlify/functions/luvli-coach"
   status = 200
 
+# /api/delete-account  →  the serverless function (needs SUPABASE_SERVICE_ROLE_KEY set)
+[[redirects]]
+  from = "/api/delete-account"
+  to = "/.netlify/functions/delete-account"
+  status = 200
+
 # A gentle security header set for the static app
 [[headers]]
   for = "/*"
