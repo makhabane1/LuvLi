@@ -27,6 +27,9 @@ const SupabaseSync = (() => {
   let lastBacklogJSON = null;
   let lastSettingsJSON = null;
   let lastProfileName = null;
+  let lastSessionsJSON = null;
+  let lastCheckInsJSON = null;
+  let lastNightReviewsJSON = null;
   let syncing = false;
   let pendingAgain = false;
 
@@ -176,6 +179,62 @@ const SupabaseSync = (() => {
     if (row.distraction_apps && row.distraction_apps.length) draft.distractionApps = row.distraction_apps;
   }
 
+  // Not synced yet: subjects (Phase 2's "Later" bucket) haven't got a table
+  // pull/push implemented, so focus_sessions.subject_id — a real FK to
+  // subjects — is left null here rather than sent and rejected. Revisit
+  // once subjects sync exists: link it up here too.
+  function sessionToRow(session, uid) {
+    return {
+      id: session.id,
+      user_id: uid,
+      subject_id: null,
+      subject_name: session.subjectName || '',
+      goal: session.goal || '',
+      minutes: session.minutes,
+      date: session.date,
+      type: session.type || 'focus',
+      ended_at: session.endedAt || new Date().toISOString()
+    };
+  }
+
+  function rowToSession(row) {
+    return {
+      id: row.id,
+      subjectId: '',
+      subjectName: row.subject_name || '',
+      goal: row.goal || '',
+      minutes: row.minutes,
+      date: row.date,
+      type: row.type,
+      endedAt: row.ended_at
+    };
+  }
+
+  const MOODS = ['great', 'good', 'okay', 'low', 'difficult', 'exhausted'];
+
+  function checkInsToRows(checkIns, uid) {
+    return Object.keys(checkIns)
+      .filter((date) => checkIns[date] && MOODS.indexOf(checkIns[date].mood) > -1)
+      .map((date) => ({ user_id: uid, date, mood: checkIns[date].mood, note: checkIns[date].note || '' }));
+  }
+
+  function nightReviewsToRows(nightReviews, uid) {
+    return Object.keys(nightReviews)
+      .filter((date) => nightReviews[date] && Number(nightReviews[date].rating) >= 1)
+      .map((date) => ({ user_id: uid, date, rating: Number(nightReviews[date].rating) }));
+  }
+
+  /** Recompute state.focusDays from state.sessions — the same shape the app already maintains incrementally. */
+  function recomputeFocusDays(draft) {
+    const days = {};
+    draft.sessions.forEach((s) => {
+      if (!days[s.date]) days[s.date] = { minutes: 0, sessions: 0 };
+      days[s.date].minutes += s.minutes || 0;
+      days[s.date].sessions += 1;
+    });
+    draft.focusDays = days;
+  }
+
   /* -------------------------------------------------------------- push --- */
 
   /** Upsert every current row, then delete whatever is no longer local. */
@@ -205,6 +264,21 @@ const SupabaseSync = (() => {
       .then(({ error }) => { if (error) throw error; });
   }
 
+  function pushSessions(sessions, uid) { return syncTable('focus_sessions', sessions.map((s) => sessionToRow(s, uid)), uid); }
+
+  /** check_ins/night_reviews are only ever added to locally, never removed — plain upsert, no delete-missing step. */
+  function pushCheckIns(checkIns, uid) {
+    const rows = checkInsToRows(checkIns, uid);
+    if (!rows.length) return Promise.resolve();
+    return client().from('check_ins').upsert(rows, { onConflict: 'user_id,date' }).then(({ error }) => { if (error) throw error; });
+  }
+
+  function pushNightReviews(nightReviews, uid) {
+    const rows = nightReviewsToRows(nightReviews, uid);
+    if (!rows.length) return Promise.resolve();
+    return client().from('night_reviews').upsert(rows, { onConflict: 'user_id,date' }).then(({ error }) => { if (error) throw error; });
+  }
+
   function notifySyncFailed() {
     if (window.UI && typeof UI.toast === 'function') {
       UI.toast({
@@ -226,11 +300,18 @@ const SupabaseSync = (() => {
     const backlogJSON = JSON.stringify(state.backlog);
     const settingsJSON = JSON.stringify(settingsToRow(state, uid));
     const profileName = state.profile.name;
+    const sessionsJSON = JSON.stringify(state.sessions);
+    const checkInsJSON = JSON.stringify(state.checkIns);
+    const nightReviewsJSON = JSON.stringify(state.nightReviews);
     const tasksChanged = tasksJSON !== lastTasksJSON;
     const backlogChanged = backlogJSON !== lastBacklogJSON;
     const settingsChanged = settingsJSON !== lastSettingsJSON;
     const profileChanged = profileName !== lastProfileName;
-    if (!tasksChanged && !backlogChanged && !settingsChanged && !profileChanged) return;
+    const sessionsChanged = sessionsJSON !== lastSessionsJSON;
+    const checkInsChanged = checkInsJSON !== lastCheckInsJSON;
+    const nightReviewsChanged = nightReviewsJSON !== lastNightReviewsJSON;
+    if (!tasksChanged && !backlogChanged && !settingsChanged && !profileChanged
+      && !sessionsChanged && !checkInsChanged && !nightReviewsChanged) return;
 
     if (syncing) { pendingAgain = true; return; }
     syncing = true;
@@ -240,6 +321,9 @@ const SupabaseSync = (() => {
     if (backlogChanged) jobs.push(pushBacklog(state.backlog, uid).then(() => { lastBacklogJSON = backlogJSON; }));
     if (settingsChanged) jobs.push(pushSettings(state, uid).then(() => { lastSettingsJSON = settingsJSON; }));
     if (profileChanged) jobs.push(pushProfileName(profileName, uid).then(() => { lastProfileName = profileName; }));
+    if (sessionsChanged) jobs.push(pushSessions(state.sessions, uid).then(() => { lastSessionsJSON = sessionsJSON; }));
+    if (checkInsChanged) jobs.push(pushCheckIns(state.checkIns, uid).then(() => { lastCheckInsJSON = checkInsJSON; }));
+    if (nightReviewsChanged) jobs.push(pushNightReviews(state.nightReviews, uid).then(() => { lastNightReviewsJSON = nightReviewsJSON; }));
 
     Promise.all(jobs).catch((err) => {
       console.error('Luvli: could not sync to Supabase', err);
@@ -267,12 +351,18 @@ const SupabaseSync = (() => {
       client().from('tasks').select('*').eq('user_id', uid),
       client().from('backlog').select('*').eq('user_id', uid),
       client().from('settings').select('*').eq('user_id', uid).maybeSingle(),
-      client().from('profiles').select('*').eq('id', uid).maybeSingle()
-    ]).then(([tasksRes, backlogRes, settingsRes, profileRes]) => {
+      client().from('profiles').select('*').eq('id', uid).maybeSingle(),
+      client().from('focus_sessions').select('*').eq('user_id', uid),
+      client().from('check_ins').select('*').eq('user_id', uid),
+      client().from('night_reviews').select('*').eq('user_id', uid)
+    ]).then(([tasksRes, backlogRes, settingsRes, profileRes, sessionsRes, checkInsRes, nightReviewsRes]) => {
       if (tasksRes.error) throw tasksRes.error;
       if (backlogRes.error) throw backlogRes.error;
       if (settingsRes.error) throw settingsRes.error;
       if (profileRes.error) throw profileRes.error;
+      if (sessionsRes.error) throw sessionsRes.error;
+      if (checkInsRes.error) throw checkInsRes.error;
+      if (nightReviewsRes.error) throw nightReviewsRes.error;
 
       const cloudTasks = tasksRes.data.map(rowToTask);
       const cloudBacklog = backlogRes.data.map(rowToBacklog);
@@ -320,6 +410,45 @@ const SupabaseSync = (() => {
       } else {
         lastProfileName = state.profile.name;
       }
+
+      // Sessions: same array-diff approach as tasks/backlog (compaction
+      // removes old ones locally after 90 days, which should delete them
+      // from the cloud too — see Storage.compactHistory).
+      const cloudSessions = sessionsRes.data.map(rowToSession);
+      const localHasSessions = state.sessions && state.sessions.length;
+      const cloudSessionsEmpty = !cloudSessions.length;
+      if (cloudSessionsEmpty && localHasSessions) {
+        lastSessionsJSON = JSON.stringify([]);
+        pushJobs.push(pushSessions(state.sessions, uid).then(() => { lastSessionsJSON = JSON.stringify(state.sessions); }));
+      } else {
+        Storage.update((draft) => {
+          draft.sessions = cloudSessions;
+          recomputeFocusDays(draft);
+        }, 'supabase-pull', { undo: false });
+        lastSessionsJSON = JSON.stringify(cloudSessions);
+      }
+
+      // check_ins/night_reviews: only ever added to, never removed, on
+      // either side — merge both into a union rather than picking a
+      // direction, so a mood logged on one device never disappears when
+      // another device (that hasn't seen it yet) pulls. Local wins for any
+      // date present on both sides, since it's what's actively being edited.
+      const cloudCheckIns = {};
+      checkInsRes.data.forEach((row) => { cloudCheckIns[row.date] = { mood: row.mood, note: row.note || '' }; });
+      const mergedCheckIns = Object.assign({}, cloudCheckIns, state.checkIns);
+
+      const cloudNightReviews = {};
+      nightReviewsRes.data.forEach((row) => { cloudNightReviews[row.date] = { rating: row.rating }; });
+      const mergedNightReviews = Object.assign({}, cloudNightReviews, state.nightReviews);
+
+      Storage.update((draft) => {
+        draft.checkIns = mergedCheckIns;
+        draft.nightReviews = mergedNightReviews;
+      }, 'supabase-pull', { undo: false });
+      lastCheckInsJSON = JSON.stringify(mergedCheckIns);
+      lastNightReviewsJSON = JSON.stringify(mergedNightReviews);
+      // Push straight away if the merge added anything the cloud didn't have yet.
+      pushJobs.push(pushCheckIns(mergedCheckIns, uid), pushNightReviews(mergedNightReviews, uid));
 
       return Promise.all(pushJobs).then(() => {});
     });
