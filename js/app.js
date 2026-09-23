@@ -3226,6 +3226,7 @@ const App = (() => {
  Auth.ready().then(() => {
  if (!requireAuth()) return;
  renderAccountCard();
+ if (typeof SupabaseSync !== 'undefined') SupabaseSync.init();
 
  if (firstEverVisit) {
  setTimeout(() => UI.toast({
