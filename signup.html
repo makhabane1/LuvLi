@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<!--
+ Luvli ♡ — Create your account
+ -----------------------------------------------------------------------------
+ The front door for a brand-new person: name, email, password, confirm, terms.
+ Then a short onboarding so Luvli knows how to support them from day one.
+
+ Files that make this page:
+ • signup.html  -> structure only
+ • css/style.css  -> the shared design system
+ • css/auth.css  -> the shared account look (backdrop, glass card, fields)
+ • css/signup.css  -> what is specific to this page
+ • js/storage.js  -> the saved life-data (shared with the app)
+ • js/auth.js  -> the accounts themselves (local today, a backend later)
+ • js/auth-ui.js  -> shared form behaviour + the route guard
+ • js/signup.js  -> this page's flow
+-->
+<html lang="en" data-theme="rose">
+<head>
+ <meta charset="UTF-8" />
+ <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+ <title>Create your account — Luvli</title>
+ <meta name="description" content="Create your Luvli account and set up your day in a minute." />
+ <meta name="theme-color" content="#FDF7FB" />
+ <link rel="manifest" href="manifest.json" />
+ <link rel="icon" href="assets/icon.svg" type="image/svg+xml" />
+ <link rel="apple-touch-icon" href="assets/icon-192.png" />
+ <link rel="stylesheet" href="css/style.css" />
+ <link rel="stylesheet" href="css/auth.css" />
+ <link rel="stylesheet" href="css/signup.css" />
+</head>
+<body>
+
+ <p class="sr-only" id="authAnnouncer" aria-live="polite" aria-atomic="true"></p>
+
+ <div class="auth-shell">
+
+    <!-- Layered ambient background: soft pink, lavender, peach, light blue -->
+    <div class="auth-bg" aria-hidden="true">
+      <div class="auth-blobs">
+        <span class="auth-blob b1"></span>
+        <span class="auth-blob b2"></span>
+        <span class="auth-blob b3"></span>
+        <span class="auth-blob b4"></span>
+      </div>
+      <div class="auth-motes" id="authMotes"></div>
+    </div>
+
+    <div class="auth-topbar">
+      <a class="auth-link" href="login.html" data-inline-nav="login">
+        <span data-ico="arrow-left" aria-hidden="true"></span> Back to sign in
+      </a>
+      <span class="auth-trust-chip shimmer"><span data-ico="lock" aria-hidden="true"></span> Private by design</span>
+    </div>
+
+    <!-- ===================== STAGE 1 · the sign-up card ===================== -->
+    <section class="auth-card signup-card" id="signupCard" aria-labelledby="signupTitle">
+      <header class="auth-brand">
+        <span class="auth-mark" data-ico="cpu" aria-hidden="true"></span>
+        <span class="auth-brand-text">
+          <span class="brand-word">Luvli</span>
+          <small>Make every day feel intentional.</small>
+        </span>
+      </header>
+
+      <!-- The welcome side -->
+      <div class="auth-aside">
+        <span class="auth-eyebrow">Welcome to Luvli</span>
+        <h2 class="auth-lead">A calmer, <span class="grad-text">intentional</span> way to run your day.</h2>
+        <ul class="auth-points">
+          <li>
+            <span class="pt-ico" data-ico="compass" aria-hidden="true"></span>
+            <span class="pt-body"><strong>Plans around your real life</strong>
+              <span class="pt-text">Tells you what to do now, and gently moves what slips.</span></span>
+          </li>
+          <li>
+            <span class="pt-ico" data-ico="cpu" aria-hidden="true"></span>
+            <span class="pt-body"><strong>An assistant that learns you</strong>
+              <span class="pt-text">Suggests, protects your focus and notices how you work best.</span></span>
+          </li>
+          <li>
+            <span class="pt-ico" data-ico="shield" aria-hidden="true"></span>
+            <span class="pt-body"><strong>Private by design</strong>
+              <span class="pt-text">Your account and your day stay on this device.</span></span>
+          </li>
+        </ul>
+        <div class="auth-trust">
+          <span class="auth-trust-chip"><span data-ico="lock" aria-hidden="true"></span> No server</span>
+          <span class="auth-trust-chip"><span data-ico="bolt" aria-hidden="true"></span> Set up in a minute</span>
+        </div>
+      </div>
+
+      <!-- The form side -->
+      <div class="auth-panel">
+        <div class="auth-tabs" role="tablist" aria-label="Account">
+          <button class="auth-tab is-active" id="tabSignup" type="button" role="tab"
+                  aria-selected="true" data-inline-nav="signup">Create account</button>
+          <button class="auth-tab" id="tabLogin" type="button" role="tab"
+                  aria-selected="false" data-inline-nav="login">Sign in</button>
+        </div>
+
+        <!-- ===== the form ===== -->
+        <form class="auth-form" id="signupForm" novalidate>
+          <h1 class="auth-title" id="signupTitle">Create your account</h1>
+          <p class="auth-sub">A minute now, and Luvli is yours.</p>
+
+          <button class="btn-oauth" id="googleSignupBtn" type="button">
+            <span data-ico="google" aria-hidden="true"></span> Continue with Google
+          </button>
+          <div class="auth-or" aria-hidden="true"><span>or</span></div>
+
+          <div class="field">
+            <label class="field-label" for="suName">Full name</label>
+            <input class="input" id="suName" type="text" autocomplete="name"
+                   placeholder="Nelisiwe Makhabane" aria-describedby="suNameError" />
+            <span class="auth-error" id="suNameError" hidden></span>
+          </div>
+
+          <div class="field">
+            <label class="field-label" for="suEmail">Email</label>
+            <input class="input" id="suEmail" type="email" autocomplete="email"
+                   inputmode="email" placeholder="you@example.com" aria-describedby="suEmailError" />
+            <span class="auth-error" id="suEmailError" hidden></span>
+          </div>
+
+          <div class="field">
+            <label class="field-label" for="suPassword">Password</label>
+            <span class="auth-password">
+              <input class="input" id="suPassword" type="password" autocomplete="new-password"
+                     placeholder="At least 6 characters" aria-describedby="suPasswordError suPwHints" />
+              <button class="auth-eye" id="suPasswordEye" type="button"
+                      aria-label="Show password" aria-pressed="false">
+                <span data-ico="eye" aria-hidden="true"></span>
+              </button>
+            </span>
+            <div class="pw-meter" aria-hidden="true">
+              <div class="pw-bars" id="suPwBars">
+                <span class="pw-bar"></span><span class="pw-bar"></span>
+                <span class="pw-bar"></span><span class="pw-bar"></span>
+              </div>
+              <div class="pw-meta">
+                <span class="pw-label" id="suPwLabel">Password strength</span>
+                <span class="pw-hints" id="suPwHints"></span>
+              </div>
+            </div>
+            <span class="auth-error" id="suPasswordError" hidden></span>
+          </div>
+
+          <div class="field">
+            <label class="field-label" for="suConfirm">Confirm password</label>
+            <span class="auth-password">
+              <input class="input" id="suConfirm" type="password" autocomplete="new-password"
+                     placeholder="Once more" aria-describedby="suConfirmError" />
+              <button class="auth-eye" id="suConfirmEye" type="button"
+                      aria-label="Show password" aria-pressed="false">
+                <span data-ico="eye" aria-hidden="true"></span>
+              </button>
+            </span>
+            <span class="auth-error" id="suConfirmError" hidden></span>
+          </div>
+
+          <label class="auth-check" for="suTerms">
+            <input type="checkbox" id="suTerms" />
+            <span class="box" aria-hidden="true"><span data-ico="check"></span></span>
+            <span class="check-text">I agree to Luvli's <a class="auth-link" href="#" data-inline-nav="terms">Terms</a>
+              and <a class="auth-link" href="#" data-inline-nav="privacy">Privacy Policy</a>.</span>
+          </label>
+          <span class="auth-error" id="suTermsError" hidden></span>
+
+          <label class="switch auth-remember">
+            <input type="checkbox" id="suRemember" checked />
+            <span class="switch-track"></span>
+            <span><span class="switch-label">Keep me signed in</span>
+              <span class="switch-sub">On this device only</span></span>
+          </label>
+
+          <p class="auth-form-error" id="signupFormError" hidden role="alert"></p>
+
+          <button class="btn btn-primary btn-hero shimmer" id="signupBtn" type="submit">
+            <span data-ico="cpu" aria-hidden="true"></span> Create my account
+          </button>
+          <p class="auth-fine">No server, no spying — your account lives in this browser with your day.</p>
+        </form>
+
+        <!-- ===== the success state ===== -->
+        <div class="auth-success signup-success" id="signupSuccess" hidden>
+          <span class="auth-success-ico"><span data-ico="check" aria-hidden="true"></span></span>
+          <h3>You're all set</h3>
+          <p id="signupSuccessText">Taking you into Luvli…</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= STAGE 2 · the onboarding flow ===================== -->
+    <section class="onb-shell signup-onb" id="onboarding" hidden aria-labelledby="onbTitle">
+      <div class="onb-card">
+        <div class="onb-progress" id="onbProgress" aria-hidden="true"></div>
+
+        <!-- Step 1 · what to focus on -->
+        <div class="onb-step" id="onbStep0">
+          <span class="auth-eyebrow">Step 1 of 4</span>
+          <h2 class="onb-title" id="onbTitle">What would you like to make room for?</h2>
+          <p class="onb-sub">Choose as many as feel true. Luvli uses this to shape suggestions and what it protects in your day.</p>
+          <div class="onb-body">
+            <div class="onb-choices" id="onbFocus" role="group" aria-label="Focus areas"></div>
+          </div>
+        </div>
+
+        <!-- Step 2 · typical hours -->
+        <div class="onb-step" id="onbStep1" hidden>
+          <span class="auth-eyebrow">Step 2 of 4</span>
+          <h2 class="onb-title">When does your day usually begin and end?</h2>
+          <p class="onb-sub">Luvli will never plan past your sleep time, and keeps your mornings yours.</p>
+          <div class="onb-body">
+            <div class="auth-field-row">
+              <div class="field">
+                <label class="field-label" for="onbWake">Typical wake-up time</label>
+                <input class="input" id="onbWake" type="time" value="07:00" />
+              </div>
+              <div class="field">
+                <label class="field-label" for="onbSleep">Typical sleep time</label>
+                <input class="input" id="onbSleep" type="time" value="22:30" />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Step 3 · how you work + reminders -->
+        <div class="onb-step" id="onbStep2" hidden>
+          <span class="auth-eyebrow">Step 3 of 4</span>
+          <h2 class="onb-title">How should Luvli work with you?</h2>
+          <p class="onb-sub">This sets the tone of your planning and how often Luvli quietly checks in.</p>
+          <div class="onb-body">
+            <div class="field">
+              <label class="field-label">Productivity style</label>
+              <div class="onb-choices" id="onbStyle" role="group" aria-label="Productivity style"></div>
+            </div>
+            <div class="field">
+              <label class="field-label">Reminder preference</label>
+              <div class="onb-choices" id="onbReminders" role="group" aria-label="Reminder preference"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Step 4 · goals -->
+        <div class="onb-step" id="onbStep3" hidden>
+          <span class="auth-eyebrow">Step 4 of 4</span>
+          <h2 class="onb-title">What are you working towards?</h2>
+          <p class="onb-sub">A sentence is plenty. Luvli keeps it in mind when your day gets full.</p>
+          <div class="onb-body">
+            <div class="field">
+              <label class="field-label" for="onbGoals">Your main goals</label>
+              <textarea class="input" id="onbGoals" rows="4"
+                        placeholder="Finish my diploma, build my portfolio, sleep better…"></textarea>
+            </div>
+            <div class="onb-summary" id="onbSummary"></div>
+          </div>
+        </div>
+
+        <div class="onb-actions">
+          <button class="btn btn-ghost" id="onbBack" type="button" hidden>
+            <span data-ico="arrow-left" aria-hidden="true"></span> Back
+          </button>
+          <span class="onb-spacer"></span>
+          <button class="btn btn-primary" id="onbNext" type="button">
+            Continue <span data-ico="arrow-right" aria-hidden="true"></span>
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <p class="auth-foot">Luvli — make every day feel intentional.</p>
+ </div>
+
+  <!-- Modules load in dependency order: storage → accounts → the page -->
+ <script src="js/icons.js"></script>
+ <script src="js/storage.js"></script>
+ <script src="js/auth.js"></script>
+  <!-- Real Google sign-in: add your OAuth client ID in js/auth-config.js -->
+ <script src="js/auth-config.js"></script>
+ <script src="js/auth-ui.js"></script>
+ <script src="js/signup.js"></script>
+</body>
+</html>

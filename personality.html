@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<!--
+ Luvli — 💗 My Luvli Style ♡
+ -----------------------------------------------------------------------------
+ The whole point of this page: Luvli should feel like it was created just for
+ you. Choose how you want to be supported, and every other part of the app
+ (notifications, affirmations, Focus, Student Mode, the morning message)
+ adapts to it.
+
+ Files that make this page:
+ • personality.html  -> structure only
+ • css/personality.css  -> everything unique to this page (shared tokens)
+ • js/personality.js  -> the shared engine: preferences, voice, avatar, memory
+ • js/personality-page.js  -> the onboarding flow and the little screens
+ Shared with the rest of Luvli, so your style really lands everywhere:
+ • css/style.css  -> the one design system (colours, cards, buttons…)
+ • js/storage.js  -> the same saved life-data as the main app
+ • js/scheduler.js, js/affirmations.js, js/progress.js
+-->
+<html lang="en" data-theme="rose">
+<head>
+ <meta charset="UTF-8" />
+ <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+ <title>My Luvli Style — how Luvli supports you</title>
+ <meta name="description" content="Choose how Luvli talks to you: Soft, Coach, Study or Calm. Luvli then adapts its voice, reminders, affirmations and morning message to you." />
+ <meta name="theme-color" content="#FFF5F8" />
+ <link rel="manifest" href="manifest.json" />
+ <link rel="icon" href="assets/icon.svg" type="image/svg+xml" />
+ <link rel="apple-touch-icon" href="assets/icon-192.png" />
+ <link rel="stylesheet" href="css/style.css" />
+ <link rel="stylesheet" href="css/personality.css" />
+</head>
+<body class="ls-body">
+
+ <a class="skip-link" href="#lsMain">Skip to My Luvli Style</a>
+
+ <p class="sr-only" id="lsAnnouncer" aria-live="polite" aria-atomic="true"></p>
+
+ <!-- Shared gradient, so the rings and glows match the rest of Luvli -->
+ <svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+ <defs>
+ <linearGradient id="gradRose" x1="0%" y1="0%" x2="100%" y2="100%">
+ <stop offset="0%" stop-color="#F7CBD9" />
+ <stop offset="55%" stop-color="#EFA8BF" />
+ <stop offset="100%" stop-color="#D98FA8" />
+ </linearGradient>
+ </defs>
+ </svg>
+
+ <div class="bg-decor" aria-hidden="true">
+ <span class="blob blob-1"></span>
+ <span class="blob blob-2"></span>
+ <span class="blob blob-3"></span>
+ </div>
+
+ <div class="ls-app">
+
+ <!-- ============================== TOP BAR ============================== -->
+ <header class="ls-topbar">
+ <a class="ls-back" href="index.html" title="Back to Luvli">
+ <span class="brand-mark small"></span>
+ <span class="ls-back-text">Back to Luvli</span>
+ </a>
+
+ <div class="ls-title">
+ <span class="ls-title-orb" id="lsTitleAvatar" aria-hidden="true"></span>
+ <span class="ls-title-text">
+ <strong>My Luvli Style</strong>
+ <small id="lsTitleSub">Your day. Your goals. Your Luvli.</small>
+ </span>
+ </div>
+
+ <div class="ls-top-right">
+ <span class="chip chip-soft" id="lsTopChip">Choose your style</span>
+ <a class="btn btn-soft btn-small" href="ai-coach.html">AI Life Coach</a>
+ </div>
+ </header>
+
+ <main class="ls-shell" id="lsMain">
+
+ <!-- ============================ ONBOARDING ============================ -->
+ <!-- Step 1 · the welcome -->
+ <section class="ls-step card-hero ls-step-hero" id="lsStepWelcome" data-step="welcome">
+ <div class="ls-hero-inner">
+ <span class="ls-hero-avatar" id="lsWelcomeAvatar" aria-hidden="true"></span>
+ <div class="ls-hero-text">
+ <p class="eyebrow">Welcome, luv ♡</p>
+ <h1 class="hero-date">How would you like Luvli to support you?</h1>
+ <p class="hero-tagline">Every person is different. Some days you want gentle encouragement,
+ some days a push. Choose a style and Luvli will speak to you that way — everywhere,
+ from your reminders to your morning message.</p>
+ </div>
+ </div>
+ <div class="ls-hero-actions">
+ <button class="btn btn-primary btn-hero" id="lsStartBtn" type="button">Let's choose my style</button>
+ <a class="btn btn-ghost" href="index.html">I'll do this later</a>
+ </div>
+ <p class="ls-fineprint">Everything stays on this device. You can change your mind any time.</p>
+ </section>
+
+ <!-- Step 2 · pick a personality -->
+ <section class="ls-step" id="lsStepChoose" data-step="choose" hidden>
+ <div class="section-head">
+ <div>
+ <h2 class="ls-h2">How would you like Luvli to support you?</h2>
+ <p class="page-sub">Pick the one that sounds most like what you need. You can switch any time —
+ even for a single day.</p>
+ </div>
+ <span class="chip chip-soft" id="lsChooseChip">Step 1 of 2</span>
+ </div>
+
+ <div class="ls-grid ls-grid-styles" id="lsStyleGrid"></div>
+
+ <div class="ls-step-nav">
+ <button class="btn btn-ghost btn-small" id="lsBackToWelcome" type="button">Back</button>
+ <button class="btn btn-primary" id="lsChooseNext" type="button" disabled>Continue</button>
+ </div>
+ </section>
+
+ <!-- Step 3 · make it yours (custom settings) -->
+ <section class="ls-step" id="lsStepCustom" data-step="custom" hidden>
+ <div class="section-head">
+ <div>
+ <h2 class="ls-h2">Make Luvli sound like yours</h2>
+ <p class="page-sub">These are already chosen for you based on your style. Change anything
+ that does not feel right — Luvli will remember.</p>
+ </div>
+ <span class="chip chip-soft" id="lsCustomChip">Step 2 of 2</span>
+ </div>
+
+ <div class="ls-custom-grid">
+ <!-- Communication style -->
+ <div class="card ls-custom-card">
+ <div class="card-head">
+ <h3 class="card-title">Communication style</h3>
+ <span class="card-hint">How Luvli speaks</span>
+ </div>
+ <div class="ls-option-list" id="lsCommsList" role="radiogroup" aria-label="Communication style"></div>
+ </div>
+
+ <!-- Reminder style -->
+ <div class="card ls-custom-card">
+ <div class="card-head">
+ <h3 class="card-title">Reminder style</h3>
+ <span class="card-hint">How Luvli nudges you</span>
+ </div>
+ <div class="ls-option-list" id="lsReminderList" role="radiogroup" aria-label="Reminder style"></div>
+ </div>
+
+ <!-- Affirmation style -->
+ <div class="card ls-custom-card ls-span-2">
+ <div class="card-head">
+ <h3 class="card-title">Affirmation style</h3>
+ <span class="card-hint">Pick as many as you like</span>
+ </div>
+ <p class="card-note">Luvli writes your affirmations from these, plus your real goals, mood
+ and habits.</p>
+ <div class="chip-list mt-12" id="lsAffirmationChips"></div>
+ </div>
+
+ <!-- Avatar -->
+ <div class="card ls-custom-card ls-span-2">
+ <div class="card-head">
+ <h3 class="card-title">Your Luvli character</h3>
+ <span class="card-hint">Colour and design</span>
+ </div>
+
+ <div class="ls-avatar-row">
+ <div class="ls-avatar-stage" id="lsAvatarStage"></div>
+ <div class="ls-avatar-controls">
+ <div>
+ <h4 class="mini-title">Colour</h4>
+ <div class="ls-swatch-row" id="lsColorRow" role="radiogroup" aria-label="Avatar colour"></div>
+ </div>
+ <div>
+ <h4 class="mini-title mt-16">Appearance</h4>
+ <div class="ls-shape-row" id="lsShapeRow" role="radiogroup" aria-label="Avatar appearance"></div>
+ </div>
+ </div>
+ </div>
+ </div>
+ </div>
+
+ <div class="ls-step-nav">
+ <button class="btn btn-ghost btn-small" id="lsBackToChoose" type="button">Back</button>
+ <button class="btn btn-primary btn-hero ls-grow" id="lsFinishBtn" type="button">Save my Luvli style</button>
+ </div>
+ </section>
+
+ <!-- ============================== DASHBOARD ============================ -->
+ <section class="ls-step" id="lsStepHome" data-step="home" hidden>
+
+ <!-- Today's Luvli -->
+ <div class="card ls-today-card">
+ <div class="ls-today-inner">
+ <div class="ls-avatar-stage ls-avatar-stage-lg" id="lsHomeAvatar"></div>
+ <div class="ls-today-text">
+ <p class="eyebrow">Your Luvli today</p>
+ <h1 class="ls-today-name" id="lsHomeName">Soft Luvli</h1>
+ <p class="ls-today-tagline" id="lsHomeTagline">Gentle, supportive, calm</p>
+ <p class="ls-morning" id="lsMorning">—</p>
+ <div class="chip-list mt-12" id="lsTraitChips"></div>
+ </div>
+ </div>
+ <div class="ls-today-actions">
+ <a class="btn btn-primary" href="index.html">Open my day</a>
+ <button class="btn btn-soft btn-small" data-action="style-switch" type="button">Switch style</button>
+ <button class="btn btn-ghost btn-small" data-action="style-today" type="button">Something different today</button>
+ </div>
+ </div>
+
+ <!-- Affirmation of today -->
+ <div class="card ls-affirm-card">
+ <p class="af-category" id="lsAffirmTag">For you</p>
+ <p class="af-big" id="lsAffirmBig">—</p>
+ <div class="af-actions">
+ <button class="btn btn-soft btn-small" data-action="style-affirm" type="button">Another one</button>
+ <button class="btn btn-soft btn-small" data-action="style-affirm-save" type="button">Save this</button>
+ </div>
+ </div>
+
+ <div class="grid grid-2">
+ <!-- Choose today's style -->
+ <div class="card">
+ <div class="card-head">
+ <h2 class="card-title">How should Luvli be today?</h2>
+ <span class="card-hint" id="lsSwitchHint">Only for today</span>
+ </div>
+ <p class="card-note">Some mornings call for Coach Luvli, some for Calm. Tap one and it applies
+ to today only — your usual style stays saved.</p>
+ <div class="ls-mini-grid mt-16" id="lsTodayGrid"></div>
+ <button class="btn btn-ghost btn-small mt-12" data-action="style-keep" type="button">
+ Make today's style my usual one
+ </button>
+ </div>
+
+ <!-- What Luvli remembers -->
+ <div class="card">
+ <div class="card-head">
+ <h2 class="card-title">What Luvli remembers</h2>
+ <span class="card-hint">Saved on this device</span>
+ </div>
+ <div class="ls-memory" id="lsMemory"></div>
+ <button class="btn btn-ghost btn-small mt-12" data-action="style-forget" type="button">
+ Forget what Luvli learned
+ </button>
+ </div>
+ </div>
+
+ <!-- Where this style is used -->
+ <div class="card ls-connect-card">
+ <div class="card-head">
+ <h2 class="card-title">Where your style shows up</h2>
+ <span class="card-hint">The whole app follows you</span>
+ </div>
+ <p class="card-note">Change your Luvli style once, and every part of Luvli adapts — softly,
+ although you can always override it in the moment.</p>
+ <div class="ls-connect-grid mt-16" id="lsConnections"></div>
+ </div>
+
+ <p class="ls-foot">Your day. Your goals. Your Luvli. · made with ♡</p>
+ </section>
+
+ <!-- ============================== SWITCHER ============================= -->
+ <section class="ls-step" id="lsStepSwitch" data-step="switch" hidden>
+ <div class="section-head">
+ <div>
+ <h2 class="ls-h2">Today I need…</h2>
+ <p class="page-sub">A gentle one-day switch. Tomorrow Luvli is back to your usual style.</p>
+ </div>
+ <button class="btn btn-ghost btn-small" id="lsSwitchBack" type="button">Back</button>
+ </div>
+ <div class="ls-grid ls-grid-styles" id="lsSwitchGrid"></div>
+ </section>
+
+ </main>
+ </div>
+
+ <div class="toast-stack" id="toastStack" aria-live="polite" aria-atomic="false"></div>
+ <div class="fx-layer" id="fxLayer" aria-hidden="true"></div>
+ <div class="modal-root" id="modalRoot"></div>
+
+ <!-- Shared first, then the engine, then this page's screens -->
+ <script src="js/icons.js"></script>
+ <script src="js/storage.js"></script>
+ <script src="js/scheduler.js"></script>
+ <script src="js/affirmations.js"></script>
+ <script src="js/progress.js"></script>
+ <script src="js/auth.js"></script>
+ <script src="js/auth-guard.js"></script>
+ <script src="js/personality.js"></script>
+ <script src="js/personality-page.js"></script>
+</body>
+</html>

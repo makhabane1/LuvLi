@@ -1,0 +1,912 @@
+<!DOCTYPE html>
+<!--
+ Luvli — Make every day feel luvli.
+ A personal day-management companion built with plain HTML, CSS and JavaScript.
+
+ How the code is organised:
+ • index.html  -> structure only (the views and their empty containers)
+ • css/style.css  -> all styling (design tokens at the top)
+ • js/storage.js  -> localStorage persistence + small shared helpers
+ • js/scheduler.js  -> time logic, "Right now", Live Day, Optimize/Lighten My Day
+ • js/affirmations.js  -> affirmation library + affirmation UI
+ • js/progress.js  -> progress + streaks + Progress page
+ • js/pomodoro.js  -> Focus mode (Pomodoro is one feature of Luvli)
+ • js/notifications.js -> gentle browser notifications + in-app toasts
+ • js/app.js  -> navigation, Home, My Day, Study, Settings, modals
+-->
+<html lang="en" data-theme="rose">
+<head>
+ <meta charset="UTF-8" />
+ <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+ <title>Luvli — Make every day feel luvli.</title>
+ <meta name="description" content="Luvli is a gentle day-management companion that tells you what to do now, when to do it, and keeps you softly on track." />
+ <meta name="theme-color" content="#FFF5F8" />
+ <link rel="manifest" href="manifest.json" />
+ <link rel="icon" href="assets/icon.svg" type="image/svg+xml" />
+ <link rel="apple-touch-icon" href="assets/icon-192.png" />
+ <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+ <a class="skip-link" href="#views">Skip to Luvli's content</a>
+
+ <!-- Screen-reader announcements (the "right now" activity) -->
+ <p class="sr-only" id="liveAnnouncer" aria-live="polite" aria-atomic="true"></p>
+
+ <!-- Shared SVG gradient used by the progress + timer rings -->
+ <svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+ <defs>
+ <linearGradient id="gradRose" x1="0%" y1="0%" x2="100%" y2="100%">
+ <stop offset="0%" stop-color="#F7CBD9" />
+ <stop offset="55%" stop-color="#EFA8BF" />
+ <stop offset="100%" stop-color="#D98FA8" />
+ </linearGradient>
+ </defs>
+ </svg>
+
+ <!-- Soft decorative background blobs. Purely visual. -->
+ <div class="bg-decor" aria-hidden="true">
+ <span class="blob blob-1"></span>
+ <span class="blob blob-2"></span>
+ <span class="blob blob-3"></span>
+ </div>
+
+
+ <div class="app-shell">
+
+   <!-- ================= SIDEBAR (tablet landscape + desktop) ================= -->
+ <aside class="sidebar">
+ <div class="brand">
+ <span class="brand-mark" aria-hidden="true" data-ico="heart"></span>
+ <span class="brand-text">
+ <strong>Luvli</strong>
+ <small>Make every day feel luvli.</small>
+ </span>
+ </div>
+
+ <nav class="side-nav" id="sideNav" aria-label="Main navigation">
+ <button class="nav-item is-active" data-page="home" type="button"><span class="nav-ico" data-ico="home"></span><span class="nav-label">Home</span></button>
+ <button class="nav-item" data-page="day" type="button"><span class="nav-ico" data-ico="calendar"></span><span class="nav-label">My Day</span></button>
+ <button class="nav-item" data-page="study" type="button"><span class="nav-ico" data-ico="book"></span><span class="nav-label">Study</span></button>
+ <button class="nav-item" data-page="focus" type="button"><span class="nav-ico" data-ico="sparkles"></span><span class="nav-label">Focus</span></button>
+ <button class="nav-item" data-page="progress" type="button"><span class="nav-ico" data-ico="chart"></span><span class="nav-label">Progress</span></button>
+ <button class="nav-item" data-page="affirmations" type="button"><span class="nav-ico" data-ico="heart"></span><span class="nav-label">Affirmations</span></button>
+ <button class="nav-item" data-page="settings" type="button"><span class="nav-ico" data-ico="settings"></span><span class="nav-label">Settings</span></button>
+ </nav>
+
+ <a class="side-extra" href="personality.html">
+   <span class="side-extra-ico" data-ico="heart"></span>
+   <span class="side-extra-text">
+     <strong>My Luvli Style</strong>
+     <small>How Luvli supports you ♡</small>
+   </span>
+ </a>
+
+ <a class="side-extra" href="vision-board.html">
+   <span class="side-extra-ico" data-ico="image"></span>
+   <span class="side-extra-text">
+     <strong>Vision Board</strong>
+     <small>Dream it, pin it, become it.</small>
+   </span>
+ </a>
+
+<div class="side-foot">
+<div class="chip chip-streak" id="sideStreak" title="Your consistency streak"><span data-ico="flame"></span><span id="sideStreakCount">0 days</span></div>
+<p class="side-quote" id="sideQuote">Small progress is still progress.</p>
+<a class="side-style" id="sideStyle" href="personality.html" title="Your Luvli style">
+   <span class="side-style-avatar" id="sideStyleAvatar" aria-hidden="true"></span>
+   <span class="side-style-text">
+     <strong id="sideStyleName">Soft Luvli</strong>
+     <small>My Luvli Style ♡</small>
+   </span>
+</a>
+</div>
+ </aside>
+
+ <!-- ============================ MAIN ============================ -->
+ <main class="main">
+
+ <header class="topbar">
+ <div class="topbar-brand">
+ <span class="brand-mark small"></span>
+ <strong>Luvli</strong>
+ </div>
+ <div class="topbar-right">
+ <span class="chip chip-offline" id="netStatus" hidden>Offline — Luvli still works</span>
+ <a class="top-style" id="topStyle" href="personality.html" title="My Luvli Style ♡"></a>
+ <span class="chip chip-soft" id="topStreak"><span data-ico="flame"></span><span id="topStreakCount">0 days</span></span>
+ <span class="chip chip-soft chip-clock" id="topClock">--:--</span>
+ </div>
+ </header>
+
+ <div class="views" id="views" tabindex="-1">
+
+ <!-- ==================== HOME ==================== -->
+ <section class="view is-active" id="view-home" data-view="home">
+ <div class="hero card-hero">
+ <div class="hero-text">
+ <p class="eyebrow" id="greetingText">Good morning, luv.</p>
+ <h1 class="hero-date" id="dateText">—</h1>
+ <p class="hero-tagline" id="heroTagline">“Let's make today feel luvli.”</p>
+ </div>
+ <div class="hero-side">
+ <div class="hero-clock" id="heroClock">--:--</div>
+ <div class="hero-day-state" id="heroDayState">Here for you all day</div>
+ </div>
+ </div>
+
+ <div class="grid grid-2">
+ <div class="card card-progress" id="todayProgressCard">
+ <div class="card-head">
+ <h2 class="card-title">Today's progress</h2>
+ <span class="card-hint" id="progressPercent">0%</span>
+ </div>
+ <div class="progress-ring-wrap">
+ <svg class="progress-ring" viewBox="0 0 120 120" role="img" aria-label="Today's progress">
+ <circle class="ring-track" cx="60" cy="60" r="52"></circle>
+ <circle class="ring-fill" id="ringFill" cx="60" cy="60" r="52"></circle>
+ </svg>
+ <div class="progress-ring-center">
+ <span class="progress-big" id="progressBig">0%</span>
+ <span class="progress-sub" id="progressCount">0 / 0 completed</span>
+
+ </div>
+ </div>
+ <p class="card-note" id="progressNote">Let's add a few things to your day first, luv.</p>
+ </div>
+
+ <div class="card card-checkin">
+ <div class="card-head">
+ <h2 class="card-title">How are you feeling today?</h2>
+ </div>
+ <div class="mood-strip" id="moodStrip"></div>
+ <p class="card-note" id="moodMessage">Tap how you feel and Luvli will adjust the day with you.</p>
+ </div>
+ </div>
+
+ <!-- The most important card in the app: "What am I supposed to be doing right now?" -->
+ <div id="rightNowCard" class="right-now-slot"></div>
+
+ <!-- ♡ Luvli AI — the assistant's voice on the day, rendered by app.js -->
+ <section class="ai-card shimmer" id="aiCard" aria-labelledby="aiCardTitle">
+ <div class="ai-head">
+ <span class="ai-glyph" data-ico="cpu" aria-hidden="true"></span>
+ <div class="ai-head-text">
+ <h2 class="ai-title" id="aiCardTitle">Luvli AI</h2>
+ <span class="ai-sub">Your day, considered</span>
+ </div>
+ </div>
+ <p class="ai-message" id="aiMessage">Reading your day…</p>
+ <div class="ai-actions" id="aiActions"></div>
+ </section>
+
+ <div class="grid grid-2">
+ <div class="card card-live">
+ <div class="card-head">
+ <h2 class="card-title">Live day</h2>
+ <span class="live-dot" aria-hidden="true"></span>
+ </div>
+ <div id="liveDay" class="live-day"></div>
+ </div>
+
+ <div class="card card-actions">
+ <div class="card-head">
+ <h2 class="card-title">Luvli's little helpers</h2>
+ </div>
+ <div class="stack">
+ <button class="btn btn-primary btn-big" data-action="what-now" type="button"><span data-ico="sparkles"></span>What should I do now?</button>
+ <button class="btn btn-soft btn-big" data-action="optimize-day" type="button"><span data-ico="wand"></span>Optimize my day</button>
+ <button class="btn btn-soft btn-big" data-action="lighten-day" type="button"><span data-ico="heart"></span>Lighten my day</button>
+ <button class="btn btn-soft btn-big" data-action="rescue-me" type="button"><span data-ico="users"></span>Rescue me</button>
+ <button class="btn btn-soft btn-big" data-action="night-reset" type="button"><span data-ico="moon"></span>Nightly reset</button>
+ <a class="btn btn-soft btn-big" href="vision-board.html"><span data-ico="image"></span>Vision Board</a>
+ </div>
+ <div class="quote-card">
+ <p class="quote-text" id="homeQuote">—</p>
+ <button class="btn btn-ghost btn-small" data-action="new-quote" type="button">Another one</button>
+ </div>
+ </div>
+ </div>
+
+ <!-- 💗 My Luvli Style ♡ — a gentle invitation, only until it is answered -->
+ <div class="card card-soft style-prompt" id="stylePrompt" hidden>
+ <span class="style-prompt-avatar" id="stylePromptAvatar" aria-hidden="true"></span>
+ <div class="notify-prompt-text">
+ <strong id="stylePromptTitle">How would you like Luvli to support you?</strong>
+ <p id="stylePromptText">Choose a style — Soft, Coach, Study or Calm — and Luvli will talk to you that way everywhere.</p>
+ </div>
+ <div class="row-gap row-wrap">
+ <a class="btn btn-primary btn-small" href="personality.html">Choose my Luvli style</a>
+ <button class="btn btn-ghost btn-small" data-action="style-prompt-dismiss" type="button">Not now</button>
+ </div>
+ </div>
+
+ <div class="card card-soft notify-prompt" id="notifyPrompt" hidden>
+ <span class="notify-ico" data-ico="bell"></span>
+ <div class="notify-prompt-text">
+ <strong>Want gentle reminders, luv?</strong>
+ <p>Luvli can softly let you know when something is coming up.</p>
+ </div>
+ <div class="row-gap">
+ <button class="btn btn-primary btn-small" data-action="enable-notifications" type="button">Turn them on</button>
+ <button class="btn btn-ghost btn-small" data-action="dismiss-notifications" type="button">Not now</button>
+ </div>
+ </div>
+
+ <div class="card card-soft install-card" id="installCard" hidden>
+ <span class="notify-ico" data-ico="device"></span>
+ <div class="notify-prompt-text">
+ <strong>Add Luvli to your home screen, luv</strong>
+ <p>It opens full-screen, works offline and feels just like a real app.</p>
+ </div>
+ <div class="row-gap">
+ <button class="btn btn-primary btn-small" data-action="install-app" type="button">Add to my device</button>
+ </div>
+ </div>
+ </section>
+
+ <!-- ==================== MY DAY ==================== -->
+ <section class="view" id="view-day" data-view="day">
+ <div class="card card-daybar">
+ <div class="daybar-nav">
+ <button class="icon-btn" id="dayPrev" type="button" aria-label="Previous day">‹</button>
+ <div class="daybar-label">
+ <strong id="dayDateLabel">Today</strong>
+ <small id="dayPlanSummary">Nothing planned yet</small>
+ </div>
+ <button class="icon-btn" id="dayNext" type="button" aria-label="Next day">›</button>
+ <button class="btn btn-ghost btn-small" id="dayTodayBtn" type="button">Today</button>
+ </div>
+ <button class="btn btn-primary" id="addActivityBtn" type="button">+ Add activity</button>
+ </div>
+
+ <div class="day-alert" id="dayAlert" hidden></div>
+
+ <div class="card card-smart">
+ <div class="card-head">
+ <h2 class="card-title">Smart scheduler</h2>
+ <span class="card-hint">Tell Luvli what you need to do</span>
+ </div>
+ <p class="card-note">Add the things floating around in your head. Luvli will fit them around your real plans and protect your sleep, meals, breaks and personal time.</p>
+ <div class="smart-form">
+ <input class="input input-wide" id="backlogName" type="text" placeholder="e.g. Study Python, clean my room, work on my portfolio…" aria-label="What do you need to do?" />
+ <select class="input" id="backlogCategory" aria-label="Category"></select>
+ <select class="input" id="backlogPriority" aria-label="Priority">
+ <option value="high">High</option>
+ <option value="medium" selected>Medium</option>
+ <option value="low">Low</option>
+ </select>
+ <select class="input" id="backlogDuration" aria-label="How long will it take?">
+ <option value="15">15 min</option>
+ <option value="25">25 min</option>
+ <option value="30" selected>30 min</option>
+ <option value="45">45 min</option>
+ <option value="60">1 hour</option>
+ <option value="90">1.5 hours</option>
+ <option value="120">2 hours</option>
+ <option value="180">3 hours</option>
+ <option value="240">4 hours</option>
+ <option value="300">5 hours</option>
+ <option value="360">6 hours</option>
+ <option value="480">8 hours</option>
+ </select>
+ <button class="btn btn-primary" id="backlogAddBtn" type="button">Add to my day</button>
+ </div>
+ <p class="hint-line" id="backlogHint">Tip: write it naturally — “python 45m high tomorrow 10:00”.</p>
+ <div id="backlogList" class="backlog-list"></div>
+ <h4 class="mini-title mt-16">Quick routines</h4>
+ <p class="card-note">One tap drops a whole little routine into the day, around everything else.</p>
+ <div class="chip-list" id="routineChips"></div>
+ <div class="row-gap row-wrap">
+ <button class="btn btn-soft" data-action="optimize-day" type="button"><span data-ico="wand"></span>Optimize my day</button>
+ <button class="btn btn-ghost" data-action="lighten-day" type="button"><span data-ico="heart"></span>Lighten my day</button>
+ </div>
+ </div>
+
+ <div class="card card-grid">
+ <div class="card-head">
+ <h2 class="card-title">Day grid</h2>
+ <span class="card-hint">Drag to rearrange</span>
+ </div>
+ <div id="dayGrid"></div>
+ </div>
+
+ <div class="card">
+ <div class="card-head">
+ <h2 class="card-title">The plan</h2>
+ <span class="card-hint" id="dayTimelineHint"></span>
+ </div>
+ <div id="timeline" class="timeline"></div>
+ </div>
+ </section>
+
+ <!-- ==================== STUDY ==================== -->
+ <section class="view" id="view-study" data-view="study">
+ <div class="section-head">
+ <div>
+ <h1 class="page-title">Study</h1>
+ <p class="page-sub">Little by little, luv. Every session counts.</p>
+ </div>
+ <button class="btn btn-primary" id="addSubjectBtn" type="button">+ New subject</button>
+ </div>
+
+ <div class="stat-row" id="studyStats"></div>
+
+ <div class="grid grid-2">
+ <div class="card">
+ <div class="card-head">
+ <h2 class="card-title">Subjects &amp; goals</h2>
+ <span class="card-hint">Your current focus areas</span>
+ </div>
+ <div id="subjectList" class="subject-list"></div>
+ </div>
+
+ <div class="card">
+ <div class="card-head">
+ <h2 class="card-title">Study history</h2>
+ <span class="card-hint" id="historySummary"></span>
+ </div>
+ <div id="studyHistory" class="history-list"></div>
+ </div>
+ </div>
+ </section>
+
+ <!-- ==================== FOCUS ==================== -->
+ <section class="view" id="view-focus" data-view="focus">
+ <div class="section-head">
+ <div>
+ <h1 class="page-title">Focus</h1>
+ <p class="page-sub">One gentle session at a time. Pomodoro lives here, inside your day.</p>
+ </div>
+ <span class="chip chip-soft" id="focusTodayChip">0 min focused today</span>
+ </div>
+
+ <!-- ---------- Setup state ---------- -->
+ <div class="card focus-card" id="focusSetup">
+ <h2 class="focus-ready">Ready to focus, luv?</h2>
+ <p class="card-note">Choose what you're working on and how long you want to stay with it.</p>
+
+ <div class="focus-form">
+ <label class="field">
+ <span class="field-label">Subject</span>
+ <select class="input" id="focusSubject"></select>
+ </label>
+ <label class="field">
+ <span class="field-label">Goal for this session</span>
+ <input class="input" id="focusGoal" type="text" placeholder="e.g. Complete Functions exercises" />
+ </label>
+ </div>
+
+ <div class="preset-row" id="presetRow">
+ <button class="preset is-active" data-preset="25/5" type="button"><strong>25 / 5</strong><span>classic</span></button>
+ <button class="preset" data-preset="40/10" type="button"><strong>40 / 10</strong><span>deep work</span></button>
+ <button class="preset" data-preset="50/10" type="button"><strong>50 / 10</strong><span>study</span></button>
+ <button class="preset" data-preset="custom" type="button"><strong>Custom</strong><span>your way</span></button>
+ </div>
+
+ <div class="field-row custom-row" id="customRow" hidden>
+ <label class="field">
+ <span class="field-label">Focus minutes</span>
+ <input class="input" id="customFocusLen" type="number" min="5" max="180" value="45" />
+ </label>
+ <label class="field">
+ <span class="field-label">Break minutes</span>
+ <input class="input" id="customBreakLen" type="number" min="1" max="60" value="10" />
+ </label>
+ </div>
+
+ <button class="btn btn-primary btn-hero" id="focusStartBtn" type="button">Start focus session</button>
+ <p class="focus-hint" id="focusReadyHint">Luvli will hold the time for you.</p>
+ </div>
+
+ <!-- ---------- Running state ---------- -->
+ <div class="card focus-card focus-run" id="focusRun" hidden>
+ <div class="focus-run-top">
+ <span class="chip chip-rose" id="focusState">Focus</span>
+ <div class="focus-run-meta">
+ <strong id="focusRunSubject">Python</strong>
+ <span id="focusRunGoal">Complete Functions exercises</span>
+ </div>
+ </div>
+
+ <div class="timer-wrap">
+ <svg class="timer-ring" viewBox="0 0 220 220" aria-hidden="true">
+ <circle class="ring-track" cx="110" cy="110" r="98"></circle>
+ <circle class="ring-fill" id="timerRingFill" cx="110" cy="110" r="98"></circle>
+ </svg>
+ <div class="timer-center">
+ <div class="timer-text" id="focusTimer" role="timer" aria-live="off">25:00</div>
+ <div class="timer-sub" id="focusTimerSub">Focus time</div>
+ </div>
+ </div>
+
+ <p class="focus-affirmation" id="focusAffirmation">—</p>
+
+ <div class="focus-controls">
+ <button class="btn btn-primary btn-big" id="focusPauseBtn" type="button">Pause</button>
+ <button class="btn btn-soft" id="focusAddTimeBtn" type="button">+5 min</button>
+ <button class="btn btn-ghost" id="focusEndBtn" type="button">End session</button>
+ </div>
+
+ <div class="row-gap row-wrap" id="breakControls" hidden>
+ <button class="btn btn-primary" id="breakSkipBtn" type="button">Skip break</button>
+ <button class="btn btn-soft" id="breakNextBtn" type="button">Next session</button>
+ </div>
+
+ <div class="focus-dots" id="focusDots"></div>
+ </div>
+
+ <!-- ---------- Distraction support ---------- -->
+ <div class="card">
+ <div class="card-head">
+ <h2 class="card-title">Distraction support</h2>
+ <span class="card-hint">Saved preferences</span>
+ </div>
+ <p class="card-note">Luvli never closes your apps — these are simply your notes to yourself. Future versions of Luvli will use this to protect your focus.</p>
+ <div class="distraction-grid">
+ <div>
+ <h4 class="mini-title">My study apps</h4>
+ <div class="chip-list" id="studyAppChips"></div>
+ <div class="chip-add">
+ <input class="input input-tiny" id="studyAppInput" type="text" placeholder="Add an app…" aria-label="Add a study app" />
+ <button class="btn btn-soft btn-small" id="addStudyAppBtn" type="button">Add</button>
+ </div>
+ </div>
+ <div>
+ <h4 class="mini-title">My distractions</h4>
+ <div class="chip-list" id="distractionAppChips"></div>
+ <div class="chip-add">
+ <input class="input input-tiny" id="distractionAppInput" type="text" placeholder="Add a distraction…" aria-label="Add a distraction" />
+ <button class="btn btn-soft btn-small" id="addDistractionAppBtn" type="button">Add</button>
+ </div>
+ </div>
+ </div>
+ </div>
+ </section>
+
+ <!-- ==================== PROGRESS ==================== -->
+ <section class="view" id="view-progress" data-view="progress">
+ <div class="section-head">
+ <div>
+ <h1 class="page-title">Progress</h1>
+ <p class="page-sub">Consistency over perfection, luv. Look how you showed up.</p>
+ </div>
+ <span class="chip chip-soft" id="progressWeekChip">—</span>
+ </div>
+
+ <div class="stat-row" id="progressStats"></div>
+
+ <div class="grid grid-2">
+ <div class="card">
+ <div class="card-head">
+ <h2 class="card-title">Focus this week</h2>
+ <span class="card-hint" id="weekTotalHint"></span>
+ </div>
+ <div class="week-chart" id="weekChart"></div>
+ </div>
+ <div class="card">
+ <div class="card-head">
+ <h2 class="card-title">How your days felt</h2>
+ <span class="card-hint">Your check-ins</span>
+ </div>
+ <div id="moodHistory" class="mood-history"></div>
+ </div>
+ </div>
+
+ <div class="card card-soft insight-card" id="insightCard"></div>
+
+ <div class="card card-soft">
+ <p class="consistency-note" id="consistencyNote">—</p>
+ </div>
+ </section>
+
+ <!-- ==================== AFFIRMATIONS ==================== -->
+ <section class="view" id="view-affirmations" data-view="affirmations">
+ <div class="section-head">
+ <div>
+ <h1 class="page-title">Affirmations</h1>
+ <p class="page-sub">Little reminders, just for you.</p>
+ </div>
+ </div>
+
+ <div class="card af-card">
+ <p class="af-category" id="afCategoryLabel">For you</p>
+ <p class="af-big" id="afBig">—</p>
+ <div class="af-actions">
+ <button class="btn btn-primary" id="afShuffleBtn" type="button">Another one</button>
+ <button class="btn btn-soft" id="afFavBtn" type="button">Save this</button>
+ </div>
+ </div>
+
+ <div class="card">
+ <div class="card-head">
+ <h2 class="card-title">Categories you love</h2>
+ <span class="card-hint">Luvli shows these more often</span>
+ </div>
+ <div class="chip-list" id="afCategoryChips"></div>
+ </div>
+
+ <!-- 💗 My Luvli Style ♡ — these are written from your own life -->
+ <div class="card card-soft">
+ <div class="card-head">
+ <h2 class="card-title">💗 From your Luvli style</h2>
+ <span class="card-hint" id="afStyleName">Soft Luvli</span>
+ </div>
+ <p class="card-note">These lines are written for you from your goals, your mood, your habits
+ and the style you chose — not from a generic list. Change them any time in
+ <a class="link-soft" href="personality.html">My Luvli Style</a>.</p>
+ <div class="chip-list mt-12" id="afStyleChips"></div>
+ <p class="af-style-preview mt-12" id="afStylePreview"></p>
+ <div class="row-gap row-wrap mt-12">
+ <button class="btn btn-soft btn-small" data-action="style-affirm" type="button">Show me one now</button>
+ </div>
+ </div>
+
+ <div class="grid grid-2">
+ <div class="card">
+ <div class="card-head">
+ <h2 class="card-title">Saved</h2>
+ <span class="card-hint" id="favCount"></span>
+ </div>
+ <div id="favList" class="af-list"></div>
+ </div>
+ <div class="card">
+ <div class="card-head">
+ <h2 class="card-title">Your own words</h2>
+ <span class="card-hint">Write your own</span>
+ </div>
+ <div class="af-add">
+ <input class="input" id="customAffInput" type="text" placeholder="I am proud of myself for…" aria-label="Your own affirmation" />
+ <button class="btn btn-primary btn-small" id="addAffBtn" type="button">Add</button>
+ </div>
+ <div id="customAffList" class="af-list"></div>
+ </div>
+ </div>
+ </section>
+
+ <!-- ==================== SETTINGS ==================== -->
+ <section class="view" id="view-settings" data-view="settings">
+ <div class="section-head">
+ <div>
+ <h1 class="page-title">Settings</h1>
+ <p class="page-sub">Make Luvli feel like yours. Everything saves on this device.</p>
+ </div>
+ <span class="chip chip-soft" id="savedHint">Saved automatically</span>
+ </div>
+
+ <div class="settings-grid">
+ <div class="card">
+ <div class="card-head"><h2 class="card-title">Your profile</h2></div>
+ <div class="field-grid">
+ <label class="field">
+ <span class="field-label">What should Luvli call you?</span>
+ <input class="input" id="setName" type="text" placeholder="luv" />
+ </label>
+ <div class="field-row">
+ <label class="field">
+ <span class="field-label">Wake-up time</span>
+ <input class="input" id="setWake" type="time" />
+ </label>
+ <label class="field">
+ <span class="field-label">Sleep time</span>
+ <input class="input" id="setSleep" type="time" />
+ </label>
+ </div>
+ <label class="field">
+ <span class="field-label">Time format</span>
+ <select class="input" id="setTimeFormat">
+ <option value="24">24-hour — 13:00</option>
+ <option value="12">12-hour — 1:00 PM</option>
+ </select>
+ </label>
+ </div>
+ </div>
+
+ <div class="card">
+ <div class="card-head"><h2 class="card-title">Focus &amp; Pomodoro</h2></div>
+ <div class="field-grid">
+ <div class="field-row">
+ <label class="field">
+ <span class="field-label">Default focus (min)</span>
+ <input class="input" id="setFocus" type="number" min="5" max="180" />
+ </label>
+ <label class="field">
+ <span class="field-label">Default break (min)</span>
+ <input class="input" id="setBreak" type="number" min="1" max="60" />
+ </label>
+ </div>
+ <label class="field">
+ <span class="field-label">Long break (min)</span>
+ <input class="input" id="setLongBreak" type="number" min="5" max="90" />
+ </label>
+ <label class="switch">
+ <input type="checkbox" id="setAutoBreak" />
+ <span class="switch-track"></span>
+ <span>
+ <span class="switch-label">Suggest a break after focus</span>
+ <span class="switch-sub">Rest instead of pushing through</span>
+ </span>
+ </label>
+ <label class="switch">
+ <input type="checkbox" id="setFocusFullscreen" />
+ <span class="switch-track"></span>
+ <span>
+ <span class="switch-label">Full-screen focus mode</span>
+ <span class="switch-sub">Hide the rest of Luvli and keep the screen awake</span>
+ </span>
+ </label>
+ <label class="switch">
+ <input type="checkbox" id="setFocusSound" />
+ <span class="switch-track"></span>
+ <span>
+ <span class="switch-label">Soft chime when a session ends</span>
+ <span class="switch-sub">A gentle three-note sound (off by default)</span>
+ </span>
+ </label>
+ </div>
+ </div>
+
+ <div class="card">
+ <div class="card-head"><h2 class="card-title">Reminders</h2></div>
+ <div class="field-grid">
+ <label class="switch">
+ <input type="checkbox" id="setNotifEnabled" />
+ <span class="switch-track"></span>
+ <span>
+ <span class="switch-label">Gentle reminders</span>
+ <span class="switch-sub">Luvli softly tells you what's coming up</span>
+ </span>
+ </label>
+ <label class="field">
+ <span class="field-label">Warn me this long before an activity</span>
+ <select class="input" id="setNotifLead">
+ <option value="5">5 minutes</option>
+ <option value="10">10 minutes</option>
+ <option value="15">15 minutes</option>
+ <option value="20">20 minutes</option>
+ <option value="30">30 minutes</option>
+ </select>
+ </label>
+ <label class="switch">
+ <input type="checkbox" id="setNotifEvening" />
+ <span class="switch-track"></span>
+ <span>
+ <span class="switch-label">Evening wind-down</span>
+ <span class="switch-sub">A soft nudge two hours before sleep</span>
+ </span>
+ </label>
+ <label class="switch">
+ <input type="checkbox" id="setNotifCelebrate" />
+ <span class="switch-track"></span>
+ <span>
+ <span class="switch-label">Celebrate my wins</span>
+ <span class="switch-sub">A little "you did it" when you finish something</span>
+ </span>
+ </label>
+ </div>
+ <div class="row-gap row-wrap mt-12">
+ <button class="btn btn-soft btn-small" id="notifPermissionBtn" type="button">Allow browser notifications</button>
+ <span class="card-hint" id="notifStatus">Notifications: checking…</span>
+ </div>
+ </div>
+
+ <div class="card">
+ <div class="card-head"><h2 class="card-title">Planning</h2></div>
+ <div class="field-grid">
+ <label class="field">
+ <span class="field-label">Buffer between activities</span>
+ <select class="input" id="setBuffer">
+ <option value="0">No buffer</option>
+ <option value="5">5 minutes</option>
+ <option value="10">10 minutes</option>
+ <option value="15">15 minutes</option>
+ <option value="20">20 minutes</option>
+ </select>
+ </label>
+ <label class="field">
+ <span class="field-label">Max planned hours a day</span>
+ <select class="input" id="setMaxHours">
+ <option value="6">6 hours — gentle</option>
+ <option value="8">8 hours</option>
+ <option value="10">10 hours</option>
+ <option value="12">12 hours — full on</option>
+ <option value="16">16 hours — all in</option>
+ </select>
+ </label>
+ <label class="switch">
+ <input type="checkbox" id="setProtectBreaks" />
+ <span class="switch-track"></span>
+ <span>
+ <span class="switch-label">Protect my breaks &amp; meals</span>
+ <span class="switch-sub">Luvli never schedules over them</span>
+ </span>
+ </label>
+ <label class="switch">
+ <input type="checkbox" id="setAutoOptimize" />
+ <span class="switch-track"></span>
+ <span>
+ <span class="switch-label">Offer to optimize when I fall behind</span>
+ <span class="switch-sub">A gentle suggestion, never a push</span>
+ </span>
+ </label>
+ </div>
+ </div>
+
+ <div class="card" id="settingsStyleCard">
+ <div class="card-head">
+ <h2 class="card-title">💗 My Luvli Style</h2>
+ <span class="card-hint">How Luvli supports you</span>
+ </div>
+ <p class="card-note">Soft, Coach, Study or Calm — Luvli changes how it speaks to you,
+ what it reminds you about and how it celebrates. It also shapes your affirmations,
+ Focus sessions, Student Mode and your morning message.</p>
+ <div class="style-settings-row mt-12">
+ <span class="style-settings-avatar" id="settingsStyleAvatar" aria-hidden="true"></span>
+ <span class="style-settings-text">
+ <strong id="settingsStyleName">Soft Luvli</strong>
+ <small id="settingsStyleSummary">Gentle, supportive, calm</small>
+ </span>
+ </div>
+ <div class="chip-list mt-12" id="settingsStyleToday"></div>
+ <div class="row-gap row-wrap mt-12">
+ <a class="btn btn-primary btn-small" href="personality.html">Change my style</a>
+ <button class="btn btn-soft btn-small" data-action="style-keep" type="button">Make today's style my usual one</button>
+ </div>
+ </div>
+
+ <div class="card">
+ <div class="card-head">
+ <h2 class="card-title">Affirmations</h2>
+ <span class="card-hint">Pick what speaks to you</span>
+ </div>
+ <div class="chip-list" id="setAffCategories"></div>
+ <div class="field-grid mt-12">
+ <label class="switch">
+ <input type="checkbox" id="setAffFocus" />
+ <span class="switch-track"></span>
+ <span>
+ <span class="switch-label">Show affirmations during Focus</span>
+ <span class="switch-sub">A soft reminder while you work</span>
+ </span>
+ </label>
+ </div>
+ </div>
+
+ <div class="card">
+ <div class="card-head">
+ <h2 class="card-title">My study apps</h2>
+ <span class="card-hint">Your helpful tools</span>
+ </div>
+ <div class="chip-list" id="setStudyAppChips"></div>
+ <div class="chip-add">
+ <input class="input input-tiny" id="setStudyAppInput" type="text" placeholder="Add an app…" aria-label="Add a study app" />
+ <button class="btn btn-soft btn-small" id="setAddStudyAppBtn" type="button">Add</button>
+ </div>
+ </div>
+
+ <div class="card">
+ <div class="card-head">
+ <h2 class="card-title">My distractions</h2>
+ <span class="card-hint">Saved, never blocked</span>
+ </div>
+ <div class="chip-list" id="setDistractionAppChips"></div>
+ <div class="chip-add">
+ <input class="input input-tiny" id="setDistractionAppInput" type="text" placeholder="Add a distraction…" aria-label="Add a distraction" />
+ <button class="btn btn-soft btn-small" id="setAddDistractionAppBtn" type="button">Add</button>
+ </div>
+ </div>
+
+ <div class="card">
+ <div class="card-head">
+ <h2 class="card-title">Look &amp; feel</h2>
+ <span class="card-hint">Pick what feels like you</span>
+ </div>
+ <p class="card-note">Luvli's colours change everywhere — cards, buttons, charts and even your progress ring.</p>
+ <div class="theme-picker mt-12" id="themePicker"></div>
+ <div class="field-grid mt-12">
+ <label class="switch">
+ <input type="checkbox" id="setReduceMotion" />
+ <span class="switch-track"></span>
+ <span>
+ <span class="switch-label">Reduce motion</span>
+ <span class="switch-sub">Calmer animations and no floating sparkles</span>
+ </span>
+ </label>
+ </div>
+ </div>
+
+ <div class="card">
+ <div class="card-head">
+ <h2 class="card-title">Sync across my devices</h2>
+ <span class="card-hint">Optional · off by default</span>
+ </div>
+ <p class="card-note">Luvli is local-first, so it works beautifully without this. If you want the same
+ day on your tablet and your laptop, point Luvli at a small JSON endpoint you control — your own
+ server, a serverless function, Supabase, a Raspberry Pi. Nothing leaves this device until you set one.</p>
+ <div class="field-grid mt-12">
+ <label class="field">
+ <span class="field-label">My sync endpoint (https://…)</span>
+ <input class="input" id="setSyncEndpoint" type="url" placeholder="https://example.com/luvli" />
+ </label>
+ <label class="switch">
+ <input type="checkbox" id="setSyncAuto" />
+ <span class="switch-track"></span>
+ <span>
+ <span class="switch-label">Keep this device in sync automatically</span>
+ <span class="switch-sub">Sends a copy a few seconds after each change</span>
+ </span>
+ </label>
+ </div>
+ <div class="row-gap row-wrap mt-12">
+ <button class="btn btn-soft btn-small" id="syncTestBtn" type="button">Test connection</button>
+ <button class="btn btn-soft btn-small" id="syncPushBtn" type="button">Send my Luvli</button>
+ <button class="btn btn-ghost btn-small" id="syncPullBtn" type="button">Bring it back</button>
+ </div>
+ <p class="card-hint mt-12" id="syncStatus">Not set up yet — Luvli is happily local-first.</p>
+ </div>
+
+ <!-- ==================== ACCOUNT ♡ ==================== -->
+ <div class="card">
+ <div class="card-head">
+ <h2 class="card-title">Your account</h2>
+ <span class="card-hint">On this device</span>
+ </div>
+ <div class="auth-account" id="authAccountCard">
+ <div class="auth-account-avatar" id="authAccountAvatar" aria-hidden="true"></div>
+ <div class="auth-account-text">
+ <strong id="authAccountName">—</strong>
+ <small id="authAccountEmail">—</small>
+ </div>
+ </div>
+ <p class="card-note" id="authAccountNote">Luvli has no server, so your account lives in this browser with the rest of your day.</p>
+ <div class="row-gap row-wrap mt-12">
+ <button class="btn btn-soft btn-small" data-action="auth-name-edit" type="button">Edit my name</button>
+ <button class="btn btn-danger btn-small" data-action="auth-signout" type="button">Sign out</button>
+ </div>
+ </div>
+
+ <div class="card">
+ <div class="card-head">
+ <h2 class="card-title">Your data</h2>
+ <span class="card-hint">Stays on this device</span>
+ </div>
+ <p class="card-note">Luvli saves everything in your browser with <code>localStorage</code>. Refreshing the page will never erase your day.</p>
+ <div class="row-gap row-wrap mt-12">
+ <button class="btn btn-soft btn-small" id="exportBtn" type="button">Export my data</button>
+ <label class="btn btn-ghost btn-small" for="importInput">Import data</label>
+ <input type="file" id="importInput" accept="application/json,.json" class="sr-only" />
+ <button class="btn btn-ghost btn-small" id="seedBtn" type="button">Load a sample day</button>
+ <button class="btn btn-danger btn-small" id="resetBtn" type="button">Reset everything</button>
+ </div>
+ <p class="card-hint mt-12" id="storageInfo">—</p>
+ </div>
+ </div><!-- /settings-grid -->
+
+ <p class="app-foot">Made with · Luvli · Make every day feel luvli.</p>
+ </section>
+ </div><!-- /views -->
+ </main>
+ </div><!-- /app-shell -->
+
+ <!-- Mobile navigation (filled by app.js) -->
+ <nav class="bottom-nav" id="bottomNav" aria-label="Quick navigation"></nav>
+
+ <!-- In-app notifications + floating hearts + modals -->
+ <div class="toast-stack" id="toastStack" aria-live="polite" aria-atomic="false"></div>
+ <div class="fx-layer" id="fxLayer" aria-hidden="true"></div>
+ <div class="modal-root" id="modalRoot"></div>
+
+ <!-- Modules load in dependency order: storage → logic → UI -->
+ <script src="js/icons.js"></script>
+ <script src="js/storage.js"></script>
+ <script src="js/auth.js"></script>
+ <script src="js/scheduler.js"></script>
+ <script src="js/affirmations.js"></script>
+ <script src="js/progress.js"></script>
+ <script src="js/personality.js"></script>
+ <script src="js/pomodoro.js"></script>
+ <script src="js/notifications.js"></script>
+ <script src="js/sync.js"></script>
+ <script src="js/app.js"></script>
+</body>
+</html>

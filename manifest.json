@@ -1,0 +1,50 @@
+{
+  "name": "Luvli ♡ — Make every day feel luvli.",
+  "short_name": "Luvli",
+  "description": "A gentle personal day-management companion that tells you what to do now, when to do it, and keeps you softly on track.",
+  "id": "luvli",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "display_override": ["standalone", "minimal-ui"],
+  "orientation": "any",
+  "background_color": "#FFF4F7",
+  "theme_color": "#FFF4F7",
+  "lang": "en",
+  "dir": "ltr",
+  "categories": ["productivity", "lifestyle", "health"],
+  "icons": [
+    {
+      "src": "assets/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "assets/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "assets/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "assets/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "What should I do now?",
+      "short_name": "Right now",
+      "url": "./index.html",
+      "description": "See what Luvli recommends right now"
+    }
+  ]
+}

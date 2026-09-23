@@ -1,0 +1,20 @@
+# Luvli ♡ — things that must never be committed
+
+# Secrets. Your model API key lives here; it must never leave your machine.
+.env
+.env.local
+.env.*.local
+
+# Deploy tooling
+.netlify/
+.vercel/
+
+# Node
+node_modules/
+npm-debug.log*
+yarn-error.log*
+
+# OS noise
+.DS_Store
+Thumbs.db
+desktop.ini

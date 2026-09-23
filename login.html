@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<!--
+ Luvli ♡ — Welcome back
+ -----------------------------------------------------------------------------
+ A quiet, spacious sign-in screen — plus the two panels it needs: asking for a
+ reset link, and setting a new password.
+
+ Files that make this page:
+ • login.html  -> structure only
+ • css/style.css  -> the shared design system
+ • css/auth.css  -> the shared account look (backdrop, glass card, fields)
+ • css/login.css  -> what is specific to this page
+ • js/storage.js  -> the saved life-data (shared with the app)
+ • js/auth.js  -> the accounts themselves (local today, a backend later)
+ • js/auth-ui.js  -> shared form behaviour + the route guard
+ • js/login.js  -> this page's flow
+-->
+<html lang="en" data-theme="rose">
+<head>
+ <meta charset="UTF-8" />
+ <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+ <title>Welcome back — Luvli</title>
+ <meta name="description" content="Sign in to Luvli and pick your day up where you left it." />
+ <meta name="theme-color" content="#FDF7FB" />
+ <link rel="manifest" href="manifest.json" />
+ <link rel="icon" href="assets/icon.svg" type="image/svg+xml" />
+ <link rel="apple-touch-icon" href="assets/icon-192.png" />
+ <link rel="stylesheet" href="css/style.css" />
+ <link rel="stylesheet" href="css/auth.css" />
+ <link rel="stylesheet" href="css/login.css" />
+</head>
+<body>
+
+ <p class="sr-only" id="authAnnouncer" aria-live="polite" aria-atomic="true"></p>
+
+ <div class="auth-shell">
+
+    <!-- Layered ambient background: soft pink, lavender, peach, light blue -->
+    <div class="auth-bg" aria-hidden="true">
+      <div class="auth-blobs">
+        <span class="auth-blob b1"></span>
+        <span class="auth-blob b2"></span>
+        <span class="auth-blob b3"></span>
+        <span class="auth-blob b4"></span>
+      </div>
+      <div class="auth-motes" id="authMotes"></div>
+    </div>
+
+    <div class="auth-topbar">
+      <a class="auth-link" href="signup.html" data-inline-nav="signup">
+        <span data-ico="cpu" aria-hidden="true"></span> Create an account
+      </a>
+      <span class="auth-trust-chip shimmer"><span data-ico="lock" aria-hidden="true"></span> Private by design</span>
+    </div>
+
+    <section class="auth-card login-card" aria-labelledby="loginTitle">
+      <header class="auth-brand">
+        <span class="auth-mark" data-ico="cpu" aria-hidden="true"></span>
+        <span class="auth-brand-text">
+          <span class="brand-word">Luvli</span>
+          <small>Make every day feel intentional.</small>
+        </span>
+      </header>
+
+      <!-- The welcome side -->
+      <div class="auth-aside">
+        <span class="auth-eyebrow">Welcome back</span>
+        <h2 class="auth-lead">Let's get your day <span class="grad-text">moving</span>.</h2>
+        <ul class="auth-points">
+          <li>
+            <span class="pt-ico" data-ico="compass" aria-hidden="true"></span>
+            <span class="pt-body"><strong>Right where you left it</strong>
+              <span class="pt-text">Your plan, your focus time and your progress are all waiting.</span></span>
+          </li>
+          <li>
+            <span class="pt-ico" data-ico="cpu" aria-hidden="true"></span>
+            <span class="pt-body"><strong>Luvli has been thinking</strong>
+              <span class="pt-text">Fresh suggestions for the day, ready the moment you arrive.</span></span>
+          </li>
+          <li>
+            <span class="pt-ico" data-ico="shield" aria-hidden="true"></span>
+            <span class="pt-body"><strong>Still just yours</strong>
+              <span class="pt-text">Signing in never sends your day anywhere.</span></span>
+          </li>
+        </ul>
+        <div class="auth-trust">
+          <span class="auth-trust-chip"><span data-ico="lock" aria-hidden="true"></span> Local-first</span>
+          <span class="auth-trust-chip"><span data-ico="bolt" aria-hidden="true"></span> Works offline</span>
+        </div>
+      </div>
+
+      <!-- The form side -->
+      <div class="auth-panel">
+        <div class="auth-tabs" role="tablist" aria-label="Account">
+          <button class="auth-tab" id="tabSignup" type="button" role="tab"
+                  aria-selected="false" data-inline-nav="signup">Create account</button>
+          <button class="auth-tab is-active" id="tabLogin" type="button" role="tab"
+                  aria-selected="true" data-inline-nav="login">Sign in</button>
+        </div>
+
+        <!-- ===== panel · sign in ===== -->
+        <div class="reset-step" id="panelSignIn">
+          <form class="auth-form login-form" id="loginForm" novalidate>
+            <h1 class="auth-title login-title" id="loginTitle">Welcome back.</h1>
+            <p class="auth-sub login-lead-sub">Let's get your day moving.</p>
+
+            <div class="field">
+              <label class="field-label" for="liEmail">Email</label>
+              <input class="input" id="liEmail" type="email" autocomplete="email"
+                     inputmode="email" placeholder="you@example.com" aria-describedby="liEmailError" />
+              <span class="auth-error" id="liEmailError" hidden></span>
+            </div>
+
+            <div class="field">
+              <label class="field-label" for="liPassword">Password</label>
+              <span class="auth-password">
+                <input class="input" id="liPassword" type="password" autocomplete="current-password"
+                       placeholder="Your password" aria-describedby="liPasswordError" />
+                <button class="auth-eye" id="liPasswordEye" type="button"
+                        aria-label="Show password" aria-pressed="false">
+                  <span data-ico="eye" aria-hidden="true"></span>
+                </button>
+              </span>
+              <span class="auth-error" id="liPasswordError" hidden></span>
+            </div>
+
+            <div class="login-actions">
+              <label class="switch auth-remember">
+                <input type="checkbox" id="liRemember" checked />
+                <span class="switch-track"></span>
+                <span><span class="switch-label">Remember me</span>
+                  <span class="switch-sub">On this device only</span></span>
+              </label>
+              <button class="auth-link" id="forgotBtn" type="button">Forgot password?</button>
+            </div>
+
+            <p class="auth-form-error" id="loginFormError" hidden role="alert"></p>
+
+            <button class="btn btn-primary btn-hero shimmer" id="loginBtn" type="submit">
+              <span data-ico="arrow-right" aria-hidden="true"></span> Log in
+            </button>
+
+            <div class="auth-or" aria-hidden="true"><span>or</span></div>
+
+            <button class="btn-oauth" id="googleLoginBtn" type="button">
+              <span data-ico="google" aria-hidden="true"></span> Continue with Google
+            </button>
+
+            <p class="login-switch">Don't have an account?
+              <a class="auth-link" href="signup.html" data-inline-nav="signup">Create one</a></p>
+          </form>
+
+          <!-- the successful sign-in state -->
+          <div class="auth-success" id="loginSuccess" hidden>
+            <span class="auth-success-ico"><span data-ico="check" aria-hidden="true"></span></span>
+            <h3>Welcome back</h3>
+            <p id="loginSuccessText">Opening your day…</p>
+          </div>
+        </div>
+
+        <!-- ===== panel · forgot password ===== -->
+        <div class="reset-step" id="panelForgot" hidden>
+          <form class="auth-form login-form" id="forgotForm" novalidate>
+            <h2 class="auth-title login-title">Reset your password</h2>
+            <p class="auth-sub login-lead-sub">Tell us the email on your account and we'll prepare a reset link.</p>
+
+            <div class="field">
+              <label class="field-label" for="fgEmail">Email</label>
+              <input class="input" id="fgEmail" type="email" autocomplete="email"
+                     inputmode="email" placeholder="you@example.com" aria-describedby="fgEmailError" />
+              <span class="auth-error" id="fgEmailError" hidden></span>
+            </div>
+
+            <button class="btn btn-primary btn-hero" id="forgotBtnSubmit" type="submit">
+              <span data-ico="mail" aria-hidden="true"></span> Send reset link
+            </button>
+            <button class="auth-link" id="forgotBack" type="button">Back to sign in</button>
+          </form>
+
+          <!-- the reset-link state -->
+          <div class="auth-success" id="forgotDone" hidden>
+            <span class="auth-success-ico"><span data-ico="mail" aria-hidden="true"></span></span>
+            <h3>Your reset link is ready</h3>
+            <p class="reset-note">Luvli has no mail server, so here is the link — open it to choose a new password.</p>
+            <div class="reset-code">
+              <span class="reset-link"><code id="resetLinkText">—</code></span>
+              <button class="btn btn-soft btn-small" id="resetCopyBtn" type="button">Copy link</button>
+              <button class="btn btn-primary btn-small" id="resetGoBtn" type="button">Continue</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- ===== panel · set a new password ===== -->
+        <div class="reset-step" id="panelReset" hidden>
+          <form class="auth-form login-form" id="resetForm" novalidate>
+            <h2 class="auth-title login-title">Choose a new password</h2>
+            <p class="auth-sub login-lead-sub">For <strong id="rsEmail">your account</strong>.</p>
+
+            <div class="field">
+              <label class="field-label" for="rsPassword">New password</label>
+              <span class="auth-password">
+                <input class="input" id="rsPassword" type="password" autocomplete="new-password"
+                       placeholder="At least 6 characters" aria-describedby="rsPasswordError rsPwHints" />
+                <button class="auth-eye" id="rsPasswordEye" type="button"
+                        aria-label="Show password" aria-pressed="false">
+                  <span data-ico="eye" aria-hidden="true"></span>
+                </button>
+              </span>
+              <div class="pw-meter" aria-hidden="true">
+                <div class="pw-bars" id="rsPwBars">
+                  <span class="pw-bar"></span><span class="pw-bar"></span>
+                  <span class="pw-bar"></span><span class="pw-bar"></span>
+                </div>
+                <div class="pw-meta">
+                  <span class="pw-label" id="rsPwLabel">Password strength</span>
+                  <span class="pw-hints" id="rsPwHints"></span>
+                </div>
+              </div>
+              <span class="auth-error" id="rsPasswordError" hidden></span>
+            </div>
+
+            <div class="field">
+              <label class="field-label" for="rsConfirm">Confirm new password</label>
+              <span class="auth-password">
+                <input class="input" id="rsConfirm" type="password" autocomplete="new-password"
+                       placeholder="Once more" aria-describedby="rsConfirmError" />
+                <button class="auth-eye" id="rsConfirmEye" type="button"
+                        aria-label="Show password" aria-pressed="false">
+                  <span data-ico="eye" aria-hidden="true"></span>
+                </button>
+              </span>
+              <span class="auth-error" id="rsConfirmError" hidden></span>
+            </div>
+
+            <p class="auth-form-error" id="resetFormError" hidden role="alert"></p>
+
+            <button class="btn btn-primary btn-hero" id="resetBtn" type="submit">
+              <span data-ico="check" aria-hidden="true"></span> Set new password
+            </button>
+            <button class="auth-link" id="resetBack" type="button">Back to sign in</button>
+          </form>
+        </div>
+      </div>
+    </section>
+
+    <p class="auth-foot">Luvli — make every day feel intentional.</p>
+    
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="supabase.js"></script>
+<script src="login.js"></script>
+
+ </div>
+
+  <!-- Modules load in dependency order: storage → accounts → the page -->
+ <script src="js/icons.js"></script>
+ <script src="js/storage.js"></script>
+ <script src="js/auth.js"></script>
+  <!-- Real Google sign-in: add your OAuth client ID in js/auth-config.js -->
+ <script src="js/auth-config.js"></script>
+ <script src="js/auth-ui.js"></script>
+ <script src="js/login.js"></script>
+</body>
+</html>
