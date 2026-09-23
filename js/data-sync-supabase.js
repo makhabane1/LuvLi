@@ -30,6 +30,9 @@ const SupabaseSync = (() => {
   let lastSessionsJSON = null;
   let lastCheckInsJSON = null;
   let lastNightReviewsJSON = null;
+  let lastSubjectsJSON = null;
+  let lastPersonalityJSON = null;
+  let lastAffirmationsJSON = null;
   let syncing = false;
   let pendingAgain = false;
 
@@ -210,6 +213,98 @@ const SupabaseSync = (() => {
     };
   }
 
+  // subject_schedule is deliberately not synced: no UI anywhere lets a user
+  // create/edit a schedule entry (only Storage.seedSampleDay() populates
+  // it), so there's no real data to sync in practice. rowToSubject() below
+  // carries forward whatever local schedule[] a subject already has rather
+  // than wiping it on every pull.
+  function subjectToRow(subject, uid) {
+    return {
+      id: subject.id,
+      user_id: uid,
+      name: subject.name,
+      emoji: subject.emoji || '📚',
+      goal: subject.goal || '',
+      progress: Number(subject.progress) || 0,
+      teacher: subject.teacher || '',
+      notes: subject.notes || ''
+    };
+  }
+
+  function rowToSubject(row, existingById) {
+    const existing = existingById && existingById[row.id];
+    return {
+      id: row.id,
+      name: row.name,
+      emoji: row.emoji,
+      goal: row.goal || '',
+      progress: Number(row.progress) || 0,
+      teacher: row.teacher || '',
+      notes: row.notes || '',
+      schedule: (existing && existing.schedule) || [],
+      createdAt: row.created_at
+    };
+  }
+
+  function personalityToRow(state, uid) {
+    const p = state.personality;
+    return {
+      user_id: uid,
+      key: p.key,
+      communication: p.communication,
+      reminder_style: p.reminderStyle,
+      avatar_color: p.avatar.color,
+      avatar_shape: p.avatar.shape,
+      affirmation_categories: p.affirmations,
+      customised: p.customised,
+      chosen: p.chosen,
+      onboarding_step: p.onboarding,
+      overrides: p.overrides || {},
+      memory: p.memory || {},
+      history: p.history || []
+    };
+  }
+
+  function applyPersonalityRow(draft, row) {
+    draft.personality.key = row.key;
+    draft.personality.communication = row.communication;
+    draft.personality.reminderStyle = row.reminder_style;
+    draft.personality.avatar = { color: row.avatar_color, shape: row.avatar_shape };
+    if (row.affirmation_categories && row.affirmation_categories.length) {
+      draft.personality.affirmations = row.affirmation_categories;
+    }
+    draft.personality.customised = row.customised;
+    draft.personality.chosen = row.chosen;
+    draft.personality.onboarding = row.onboarding_step;
+    draft.personality.overrides = row.overrides || {};
+    if (row.memory) draft.personality.memory = row.memory;
+    draft.personality.history = row.history || [];
+  }
+
+  // Local favourites/custom affirmations have no stable per-item id (removed
+  // by array index in app.js), so there's nothing to upsert-by-id the way
+  // tasks/backlog work — push replaces the whole set instead.
+  function affirmationsToRows(affirmations, uid) {
+    const favourites = (affirmations.favorites || []).map((f) => ({
+      user_id: uid,
+      text: typeof f === 'string' ? f : f.text,
+      is_custom: false,
+      is_favorite: true,
+      category: (typeof f === 'object' && f.category) || null
+    }));
+    const custom = (affirmations.custom || []).map((text) => ({
+      user_id: uid, text, is_custom: true, is_favorite: false, category: null
+    }));
+    return favourites.concat(custom);
+  }
+
+  function rowsToAffirmations(rows) {
+    return {
+      favorites: rows.filter((r) => r.is_favorite).map((r) => ({ text: r.text, category: r.category || 'mine' })),
+      custom: rows.filter((r) => r.is_custom).map((r) => r.text)
+    };
+  }
+
   const MOODS = ['great', 'good', 'okay', 'low', 'difficult', 'exhausted'];
 
   function checkInsToRows(checkIns, uid) {
@@ -279,6 +374,23 @@ const SupabaseSync = (() => {
     return client().from('night_reviews').upsert(rows, { onConflict: 'user_id,date' }).then(({ error }) => { if (error) throw error; });
   }
 
+  function pushSubjects(subjects, uid) { return syncTable('subjects', subjects.map((s) => subjectToRow(s, uid)), uid); }
+
+  function pushPersonality(state, uid) {
+    return client().from('personality').upsert([personalityToRow(state, uid)], { onConflict: 'user_id' })
+      .then(({ error }) => { if (error) throw error; });
+  }
+
+  /** No per-item id to upsert against — replace the whole set on every change. */
+  function pushAffirmations(affirmations, uid) {
+    const rows = affirmationsToRows(affirmations, uid);
+    return client().from('affirmations').delete().eq('user_id', uid).then(({ error }) => {
+      if (error) throw error;
+      if (!rows.length) return { error: null };
+      return client().from('affirmations').insert(rows);
+    }).then(({ error }) => { if (error) throw error; });
+  }
+
   function notifySyncFailed() {
     // UI is declared with `const` in app.js — that never attaches to
     // `window` in a classic script (unlike `var`), so `window.UI` is always
@@ -306,6 +418,9 @@ const SupabaseSync = (() => {
     const sessionsJSON = JSON.stringify(state.sessions);
     const checkInsJSON = JSON.stringify(state.checkIns);
     const nightReviewsJSON = JSON.stringify(state.nightReviews);
+    const subjectsJSON = JSON.stringify(state.subjects);
+    const personalityJSON = JSON.stringify(personalityToRow(state, uid));
+    const affirmationsJSON = JSON.stringify(state.affirmations);
     const tasksChanged = tasksJSON !== lastTasksJSON;
     const backlogChanged = backlogJSON !== lastBacklogJSON;
     const settingsChanged = settingsJSON !== lastSettingsJSON;
@@ -313,8 +428,12 @@ const SupabaseSync = (() => {
     const sessionsChanged = sessionsJSON !== lastSessionsJSON;
     const checkInsChanged = checkInsJSON !== lastCheckInsJSON;
     const nightReviewsChanged = nightReviewsJSON !== lastNightReviewsJSON;
+    const subjectsChanged = subjectsJSON !== lastSubjectsJSON;
+    const personalityChanged = personalityJSON !== lastPersonalityJSON;
+    const affirmationsChanged = affirmationsJSON !== lastAffirmationsJSON;
     if (!tasksChanged && !backlogChanged && !settingsChanged && !profileChanged
-      && !sessionsChanged && !checkInsChanged && !nightReviewsChanged) return;
+      && !sessionsChanged && !checkInsChanged && !nightReviewsChanged
+      && !subjectsChanged && !personalityChanged && !affirmationsChanged) return;
 
     if (syncing) { pendingAgain = true; return; }
     syncing = true;
@@ -327,6 +446,9 @@ const SupabaseSync = (() => {
     if (sessionsChanged) jobs.push(pushSessions(state.sessions, uid).then(() => { lastSessionsJSON = sessionsJSON; }));
     if (checkInsChanged) jobs.push(pushCheckIns(state.checkIns, uid).then(() => { lastCheckInsJSON = checkInsJSON; }));
     if (nightReviewsChanged) jobs.push(pushNightReviews(state.nightReviews, uid).then(() => { lastNightReviewsJSON = nightReviewsJSON; }));
+    if (subjectsChanged) jobs.push(pushSubjects(state.subjects, uid).then(() => { lastSubjectsJSON = subjectsJSON; }));
+    if (personalityChanged) jobs.push(pushPersonality(state, uid).then(() => { lastPersonalityJSON = personalityJSON; }));
+    if (affirmationsChanged) jobs.push(pushAffirmations(state.affirmations, uid).then(() => { lastAffirmationsJSON = affirmationsJSON; }));
 
     Promise.all(jobs).catch((err) => {
       console.error('Luvli: could not sync to Supabase', err);
@@ -357,8 +479,12 @@ const SupabaseSync = (() => {
       client().from('profiles').select('*').eq('id', uid).maybeSingle(),
       client().from('focus_sessions').select('*').eq('user_id', uid),
       client().from('check_ins').select('*').eq('user_id', uid),
-      client().from('night_reviews').select('*').eq('user_id', uid)
-    ]).then(([tasksRes, backlogRes, settingsRes, profileRes, sessionsRes, checkInsRes, nightReviewsRes]) => {
+      client().from('night_reviews').select('*').eq('user_id', uid),
+      client().from('subjects').select('*').eq('user_id', uid),
+      client().from('personality').select('*').eq('user_id', uid).maybeSingle(),
+      client().from('affirmations').select('*').eq('user_id', uid)
+    ]).then(([tasksRes, backlogRes, settingsRes, profileRes, sessionsRes, checkInsRes, nightReviewsRes,
+      subjectsRes, personalityRes, affirmationsRes]) => {
       if (tasksRes.error) throw tasksRes.error;
       if (backlogRes.error) throw backlogRes.error;
       if (settingsRes.error) throw settingsRes.error;
@@ -366,6 +492,9 @@ const SupabaseSync = (() => {
       if (sessionsRes.error) throw sessionsRes.error;
       if (checkInsRes.error) throw checkInsRes.error;
       if (nightReviewsRes.error) throw nightReviewsRes.error;
+      if (subjectsRes.error) throw subjectsRes.error;
+      if (personalityRes.error) throw personalityRes.error;
+      if (affirmationsRes.error) throw affirmationsRes.error;
 
       const cloudTasks = tasksRes.data.map(rowToTask);
       const cloudBacklog = backlogRes.data.map(rowToBacklog);
@@ -452,6 +581,48 @@ const SupabaseSync = (() => {
       lastNightReviewsJSON = JSON.stringify(mergedNightReviews);
       // Push straight away if the merge added anything the cloud didn't have yet.
       pushJobs.push(pushCheckIns(mergedCheckIns, uid), pushNightReviews(mergedNightReviews, uid));
+
+      // Subjects: same array-diff approach as tasks/backlog. Existing local
+      // subjects are looked up by id so a pull never wipes schedule[] (see
+      // rowToSubject's comment — that sub-table isn't synced).
+      const existingSubjectsById = {};
+      (state.subjects || []).forEach((s) => { existingSubjectsById[s.id] = s; });
+      const cloudSubjects = subjectsRes.data.map((row) => rowToSubject(row, existingSubjectsById));
+      const localHasSubjects = state.subjects && state.subjects.length;
+      if (!cloudSubjects.length && localHasSubjects) {
+        lastSubjectsJSON = JSON.stringify([]);
+        pushJobs.push(pushSubjects(state.subjects, uid).then(() => { lastSubjectsJSON = JSON.stringify(state.subjects); }));
+      } else {
+        Storage.update((draft) => { draft.subjects = cloudSubjects; }, 'supabase-pull', { undo: false });
+        lastSubjectsJSON = JSON.stringify(cloudSubjects);
+      }
+
+      // Personality: same "who has really customised this" heuristic as
+      // settings/onboarding — chosen means they've been through My Luvli
+      // Style at least once.
+      const cloudChosenStyle = Boolean(personalityRes.data && personalityRes.data.chosen);
+      const localChosenStyle = Boolean(state.personality.chosen);
+      if (personalityRes.data && (cloudChosenStyle || !localChosenStyle)) {
+        Storage.update((draft) => applyPersonalityRow(draft, personalityRes.data), 'supabase-pull', { undo: false });
+        lastPersonalityJSON = JSON.stringify(personalityToRow(Storage.get(), uid));
+      } else {
+        pushJobs.push(pushPersonality(state, uid).then(() => { lastPersonalityJSON = JSON.stringify(personalityToRow(state, uid)); }));
+      }
+
+      // Affirmations: no per-item id (see the comment on affirmationsToRows),
+      // so this follows the same empty-cloud-vs-local-has-data direction
+      // check as tasks/backlog rather than a per-item merge.
+      const cloudAffirmations = rowsToAffirmations(affirmationsRes.data);
+      const localHasAffirmations = (state.affirmations.favorites && state.affirmations.favorites.length)
+        || (state.affirmations.custom && state.affirmations.custom.length);
+      const cloudAffirmationsEmpty = !cloudAffirmations.favorites.length && !cloudAffirmations.custom.length;
+      if (cloudAffirmationsEmpty && localHasAffirmations) {
+        lastAffirmationsJSON = JSON.stringify([]);
+        pushJobs.push(pushAffirmations(state.affirmations, uid).then(() => { lastAffirmationsJSON = JSON.stringify(state.affirmations); }));
+      } else {
+        Storage.update((draft) => { draft.affirmations = cloudAffirmations; }, 'supabase-pull', { undo: false });
+        lastAffirmationsJSON = JSON.stringify(cloudAffirmations);
+      }
 
       return Promise.all(pushJobs).then(() => {});
     });
