@@ -208,6 +208,25 @@ const SupabaseAuthProvider = (() => {
     });
   }
 
+  /* --------------------------------------------------- Google OAuth ------
+     Supabase's real Google sign-in is a full-page redirect, not a popup with
+     an identity object handed back synchronously: the browser navigates to
+     Google, then back to `redirectTo` with the session already established.
+     auth-ui.js calls this directly (see bindGoogle) instead of going through
+     the identity-resolution path used by the local stand-in, and the page's
+     own Auth.ready().then(...) boot logic (already in login.js/signup.js)
+     picks up the new session once the browser lands back here. */
+  function signInWithOAuthRedirect(providerName, options) {
+    const opts = options || {};
+    return client().auth.signInWithOAuth({
+      provider: providerName,
+      options: { redirectTo: opts.redirectTo || (location.origin + location.pathname) }
+    }).then(({ error }) => {
+      if (error) throw error;
+      // No return value on purpose: the browser is navigating away now.
+    });
+  }
+
   return {
     name: 'supabase',
     isLocal: false,
@@ -219,12 +238,7 @@ const SupabaseAuthProvider = (() => {
     requestReset,
     resetPassword,
     update,
-    onPasswordRecovery
-    // signInWithGoogle / getGoogleIdentity intentionally not implemented yet:
-    // Google OAuth is disabled on the Supabase project and this is Phase
-    // 2's "Later" bucket. auth-ui.js already refuses to fall back to the
-    // local stand-in while this provider is active (see resolveGoogleIdentity
-    // in js/auth-ui.js), so the button shows a clear message instead of
-    // silently creating an account the backend won't recognise.
+    onPasswordRecovery,
+    signInWithOAuthRedirect
   };
 })();

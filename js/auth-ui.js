@@ -251,6 +251,22 @@ const AuthUI = (() => {
       loading(button, true);
       announce('Opening Google…');
 
+      // A real provider with real Google OAuth configured redirects the
+      // whole page to Google and back — there is no identity object to
+      // resolve here, and nothing to do after this call starts except wait
+      // for the page to reload with a session already established.
+      const provider = Auth.activeProvider && Auth.activeProvider();
+      if (provider && typeof provider.signInWithOAuthRedirect === 'function') {
+        provider.signInWithOAuthRedirect('google').catch((err) => {
+          loading(button, false);
+          const message = (err && err.message) || '';
+          setFormError(opts.errorId, /not enabled|unsupported provider/i.test(message)
+            ? 'Google sign-in isn’t turned on for this project yet.'
+            : 'Google sign-in met a hiccup. Please try again.');
+        });
+        return;
+      }
+
       resolveGoogleIdentity(opts).then((identity) => {
         if (!identity) {
           loading(button, false);
@@ -278,7 +294,10 @@ const AuthUI = (() => {
   }
 
   /**
-   * The identity to sign in with, in order of preference:
+   * The fallback path for a provider (or the local one) that does NOT do a
+   * full-page OAuth redirect — bindGoogle() above already returns early for
+   * one that does (e.g. the Supabase provider once Google is enabled on the
+   * project). The identity to sign in with, in order of preference:
    *   1. A provider that answers for itself (Auth.setProvider).
    *   2. The real Google Identity Services flow, when a client ID is configured.
    *   3. The honest local stand-in — but ONLY while the local provider is
