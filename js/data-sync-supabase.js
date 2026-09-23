@@ -280,7 +280,10 @@ const SupabaseSync = (() => {
   }
 
   function notifySyncFailed() {
-    if (window.UI && typeof UI.toast === 'function') {
+    // UI is declared with `const` in app.js — that never attaches to
+    // `window` in a classic script (unlike `var`), so `window.UI` is always
+    // undefined here even once app.js has run. Check the bare identifier.
+    if (typeof UI !== 'undefined' && typeof UI.toast === 'function') {
       UI.toast({
         icon: 'cloud-off',
         title: 'Could not save to the cloud',
@@ -469,7 +472,7 @@ const SupabaseSync = (() => {
       });
     }).catch((err) => {
       console.error('Luvli: could not load your data from Supabase', err);
-      if (window.UI && typeof UI.toast === 'function') {
+      if (typeof UI !== 'undefined' && typeof UI.toast === 'function') {
         UI.toast({
           icon: 'cloud-off',
           title: 'Could not load your cloud data',
