@@ -99,8 +99,14 @@
     const name = account && account.name ? account.name.split(' ')[0] : 'you';
     if (text) text.textContent = 'Welcome back, ' + name + '. Opening your day…';
     announce('Signed in. Opening Luvli.');
-    const next = AuthUI.afterAuth(account);
-    setTimeout(() => { location.href = next; }, 800);
+    // Pull settings first (a real backend only — this resolves instantly
+    // and does nothing for the local provider) so a returning,
+    // already-onboarded user isn't sent through onboarding again just
+    // because this device hasn't seen their cloud settings yet.
+    Promise.resolve(typeof SupabaseSync !== 'undefined' ? SupabaseSync.pull() : null).catch(() => {}).then(() => {
+      const next = AuthUI.afterAuth(account);
+      setTimeout(() => { location.href = next; }, 800);
+    });
   }
 
   /* ----------------------------------------------------- forgot password */
@@ -256,7 +262,9 @@
     Auth.ready().then(() => {
       // Already signed in? Go straight through — unless they are resetting.
       if (Auth.isSignedIn() && !AuthUI.param('reset')) {
-        location.replace(AuthUI.afterAuth(Auth.current()));
+        Promise.resolve(typeof SupabaseSync !== 'undefined' ? SupabaseSync.pull() : null).catch(() => {}).then(() => {
+          location.replace(AuthUI.afterAuth(Auth.current()));
+        });
         return;
       }
       if (!AuthUI.param('reset')) show('panelSignIn');

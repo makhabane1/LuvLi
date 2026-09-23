@@ -345,16 +345,21 @@
     // Auth.ready() resolves instantly for the local provider, and after the
     // real backend's first session check for a provider like Supabase.
     Auth.ready().then(() => {
-      // Already signed in with preferences? There is nothing to do here.
-      if (Auth.isSignedIn() && Auth.hasPreferences()) { AuthUI.goApp(); return; }
-      // Signed in but not onboarded (e.g. they refreshed mid-flow) → onboarding.
-      if (Auth.isSignedIn() && !Auth.hasPreferences()) {
-        initOnboarding();
-        startOnboarding();
+      if (!Auth.isSignedIn()) {
+        initForm();
         return;
       }
-      initForm();
-      if (AuthUI.param('step') === 'onboarding' && Auth.isSignedIn()) startOnboarding();
+      // Signed in: pull settings first (a real backend only) so a
+      // returning, already-onboarded user isn't sent through onboarding
+      // again just because this device hasn't seen their cloud settings
+      // yet — Auth.hasPreferences() only ever reads local state.
+      Promise.resolve(typeof SupabaseSync !== 'undefined' ? SupabaseSync.pull() : null).catch(() => {}).then(() => {
+        // Already signed in with preferences? There is nothing to do here.
+        if (Auth.hasPreferences()) { AuthUI.goApp(); return; }
+        // Signed in but not onboarded (e.g. they refreshed mid-flow) → onboarding.
+        initOnboarding();
+        startOnboarding();
+      });
     });
   }
 
