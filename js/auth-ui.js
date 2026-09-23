@@ -268,9 +268,11 @@ const AuthUI = (() => {
             }
             if (typeof opts.onSignedIn === 'function') opts.onSignedIn(result);
           });
-      }).catch(() => {
+      }).catch((err) => {
         loading(button, false);
-        setFormError(opts.errorId, 'Google sign-in met a hiccup. Please try again.');
+        setFormError(opts.errorId, err && err.message === 'google-not-configured'
+          ? 'Google sign-in isn’t set up yet — please use email and password for now.'
+          : 'Google sign-in met a hiccup. Please try again.');
       });
     });
   }
@@ -279,7 +281,10 @@ const AuthUI = (() => {
    * The identity to sign in with, in order of preference:
    *   1. A provider that answers for itself (Auth.setProvider).
    *   2. The real Google Identity Services flow, when a client ID is configured.
-   *   3. The honest local stand-in, so the button still works with no setup.
+   *   3. The honest local stand-in — but ONLY while the local provider is
+   *      active. A real backend (e.g. Supabase) that has no Google support
+   *      wired up must say so plainly instead of quietly creating a
+   *      local-only account that backend will never recognise as signed in.
    */
   function resolveGoogleIdentity(opts) {
     // A real provider can answer for itself.
@@ -290,6 +295,9 @@ const AuthUI = (() => {
     // Real Google, when auth-config.js carries a client ID.
     if (googleConfigured()) {
       return googleIdentity(opts);
+    }
+    if (provider && provider.isLocal === false) {
+      return Promise.reject(new Error('google-not-configured'));
     }
     return Promise.resolve(prototypeGoogleIdentity());
   }

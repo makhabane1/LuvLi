@@ -37,15 +37,25 @@
 
      Auth.setProvider({
        name: 'supabase',
-       signUp:  (input) => supabase.auth.signUp(input),
-       signIn:  (input) => supabase.auth.signInWithPassword(input),
-       signOut: () => supabase.auth.signOut(),
-       current: () => supabase.auth.getUser()
+       init:    () => ...,                 // optional: async first-session check
+       signUp:  (input, options) => ...,   // -> { ok, account } | { ok:false, errors }
+       signIn:  (input, options) => ...,
+       signOut: () => ...,
+       current: () => ...,                 // MUST be synchronous — see init()
+       requestReset: (email) => ...,
+       resetPassword: (email, token, password, confirm) => ...,
+       update: (patch) => ...
      });
 
-   The provider contract is intentionally tiny — the four calls above, each
-   returning the same { ok, account } / { ok:false, errors } shape the local one
-   already does.
+   Every call here is dispatched to the active provider if it defines that
+   method, and falls back to the local implementation otherwise (see
+   dispatch() near the bottom of this file) — so a provider only needs to
+   implement what it actually changes. current() must stay synchronous
+   because the rest of the app calls Auth.current()/isSignedIn() as a plain
+   function call, not a promise; a provider whose session check is async
+   (like Supabase's) should keep a small in-memory cache updated via init()
+   and its own change-event listener, and expose current() as a sync read of
+   that cache. See js/auth-provider-supabase.js for a worked example.
    ========================================================================== */
 'use strict';
 
@@ -574,20 +584,47 @@ const Auth = (() => {
     current: () => publicView(current()),
     requestReset,
     resetPassword,
+    update: (patch) => update(patch),
     isLocal: true
   };
 
   let provider = localProvider;
+  let readyPromise = Promise.resolve();
 
-  /** Point Luvli at a real auth service. See the header for the contract. */
+  /**
+   * Point Luvli at a real auth service. See the header for the contract.
+   * If the provider exposes init(), that promise becomes Auth.ready() — so a
+   * real backend (which has to check a session asynchronously) can hold off
+   * every page's guard/render until its first session check has resolved.
+   */
   function setProvider(next) {
     provider = next && typeof next === 'object' ? next : localProvider;
+    readyPromise = Promise.resolve(provider.init ? provider.init() : undefined).catch(() => {});
     return provider;
   }
 
   /** The active provider (handy for the pages and for tests). */
   function activeProvider() {
     return provider;
+  }
+
+  /** Resolves once the active provider's first session check has finished. */
+  function ready() {
+    return readyPromise;
+  }
+
+  /**
+   * Call the active provider's version of a method, falling back to the
+   * local implementation if the provider does not define it. This is what
+   * actually makes Auth.setProvider() take effect for the calls every page
+   * already makes (Auth.signIn(), Auth.current(), ...) instead of only the
+   * Google button noticing it.
+   */
+  function dispatch(method) {
+    return function () {
+      const target = provider && typeof provider[method] === 'function' ? provider : localProvider;
+      return target[method].apply(target, arguments);
+    };
   }
 
   /* --------------------------- avatar rendering --------------------------- */
@@ -607,11 +644,23 @@ const Auth = (() => {
 
   return {
     COLORS, SHAPES, MIN_PASSWORD,
-    signUp, signIn, signInWithGoogle, signOut, current, isSignedIn, hasAccounts, accounts,
-    exists, validate, validateSignIn, strength, update, publicView, avatarHtml,
-    normaliseEmail, initialsFor,
-    requestReset, checkResetToken, resetPassword,
+    // These go through the active provider (local by default, a real backend
+    // once Auth.setProvider() is called) — see dispatch() above.
+    signUp: dispatch('signUp'),
+    signIn: dispatch('signIn'),
+    signInWithGoogle: dispatch('signInWithGoogle'),
+    signOut: dispatch('signOut'),
+    current: dispatch('current'),
+    isSignedIn: () => Boolean(dispatch('current')()),
+    requestReset: dispatch('requestReset'),
+    resetPassword: dispatch('resetPassword'),
+    update: dispatch('update'),
+    // Local-only helpers: form validation/strength meter never touch a
+    // backend, and hasAccounts/accounts/exists only make sense for the local
+    // provider's own account list (a real backend has no such listing here).
+    hasAccounts, accounts, exists, validate, validateSignIn, strength,
+    publicView, avatarHtml, normaliseEmail, initialsFor, checkResetToken,
     savePreferences, hasPreferences, preferences,
-    setProvider, activeProvider
+    setProvider, activeProvider, ready
   };
 })();

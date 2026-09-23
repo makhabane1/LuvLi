@@ -180,9 +180,9 @@
           <!-- the reset-link state -->
           <div class="auth-success" id="forgotDone" hidden>
             <span class="auth-success-ico"><span data-ico="mail" aria-hidden="true"></span></span>
-            <h3>Your reset link is ready</h3>
-            <p class="reset-note">Luvli has no mail server, so here is the link — open it to choose a new password.</p>
-            <div class="reset-code">
+            <h3 id="resetDoneTitle">Your reset link is ready</h3>
+            <p class="reset-note" id="resetDoneNote">Luvli has no mail server, so here is the link — open it to choose a new password.</p>
+            <div class="reset-code" id="resetLinkRow">
               <span class="reset-link"><code id="resetLinkText">—</code></span>
               <button class="btn btn-soft btn-small" id="resetCopyBtn" type="button">Copy link</button>
               <button class="btn btn-primary btn-small" id="resetGoBtn" type="button">Continue</button>
@@ -250,6 +250,11 @@
  <script src="js/icons.js"></script>
  <script src="js/storage.js"></script>
  <script src="js/auth.js"></script>
+ <!-- Real Supabase auth. See supabase.js's header for why the URL/key here are safe to commit. -->
+ <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+ <script src="supabase.js"></script>
+ <script src="js/auth-provider-supabase.js"></script>
+ <script src="js/auth-boot.js"></script>
   <!-- Real Google sign-in: add your OAuth client ID in js/auth-config.js -->
  <script src="js/auth-config.js"></script>
  <script src="js/auth-ui.js"></script>

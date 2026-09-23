@@ -127,22 +127,38 @@
         return;
       }
       resetEmail = result.email;
-      resetToken = result.token;
-      // No mail server here, so Luvli shows the link instead of pretending to
-      // send it. With a real backend this whole block becomes "check your inbox".
-      const link = location.origin + location.pathname + '?reset=' + encodeURIComponent(result.token) +
-        '&email=' + encodeURIComponent(result.email);
-      const linkEl = $('resetLinkText');
-      if (linkEl) linkEl.textContent = link;
-      const copy = $('resetCopyBtn');
-      if (copy) copy.addEventListener('click', () => copyText(link));
-      const go = $('resetGoBtn');
-      if (go) go.addEventListener('click', () => { show('panelReset'); const p = $('rsPassword'); if (p) p.focus(); });
+      resetToken = result.token || '';
       const panel = $('forgotDone');
       const form = $('forgotForm');
+      const linkRow = $('resetLinkRow');
+
+      if (result.token) {
+        // The local provider has no mail server, so it hands back a token and
+        // Luvli shows the link directly instead of pretending to send it.
+        const link = location.origin + location.pathname + '?reset=' + encodeURIComponent(result.token) +
+          '&email=' + encodeURIComponent(result.email);
+        const linkEl = $('resetLinkText');
+        if (linkEl) linkEl.textContent = link;
+        const copy = $('resetCopyBtn');
+        if (copy) copy.addEventListener('click', () => copyText(link));
+        const go = $('resetGoBtn');
+        if (go) go.addEventListener('click', () => { show('panelReset'); const p = $('rsPassword'); if (p) p.focus(); });
+        if (linkRow) linkRow.hidden = false;
+      } else {
+        // A real provider (Supabase) sent an actual email and deliberately
+        // does not hand the token back to the browser — there is nothing to
+        // click here; the emailed link brings them straight back to this
+        // page, which reopens the reset panel via onPasswordRecovery() below.
+        if (linkRow) linkRow.hidden = true;
+        const title = $('resetDoneTitle');
+        const note = $('resetDoneNote');
+        if (title) title.textContent = 'Check your email';
+        if (note) note.textContent = 'We sent a reset link to ' + result.email + '. Open it on this device to choose a new password.';
+      }
+
       if (form) form.hidden = true;
       if (panel) panel.hidden = false;
-      announce('Reset link ready.');
+      announce(result.token ? 'Reset link ready.' : 'Check your email for a reset link.');
     });
   }
 
@@ -165,6 +181,7 @@
 
   function initReset() {
     // A reset link carries ?reset=…&email=… — open that panel straight away.
+    // This is the local provider's own scheme (see js/auth.js).
     const token = AuthUI.param('reset');
     const email = AuthUI.param('email');
     if (token && email) {
@@ -172,6 +189,21 @@
       const field = $('rsEmail');
       if (field) field.textContent = email;
       show('panelReset');
+    }
+
+    // A real provider's emailed link (Supabase) carries its own token in the
+    // URL and establishes a temporary session automatically; it tells us via
+    // this event instead of a query param we control.
+    const provider = Auth.activeProvider && Auth.activeProvider();
+    if (provider && typeof provider.onPasswordRecovery === 'function') {
+      provider.onPasswordRecovery(() => {
+        resetToken = ''; resetEmail = '';
+        const field = $('rsEmail');
+        if (field) field.textContent = '';
+        show('panelReset');
+        const p = $('rsPassword');
+        if (p) p.focus();
+      });
     }
 
     AuthUI.bindPassword({
@@ -219,12 +251,16 @@
     initForgot();
     initReset();
 
-    // Already signed in? Go straight through — unless they are resetting.
-    if (Auth.isSignedIn() && !AuthUI.param('reset')) {
-      location.replace(AuthUI.afterAuth(Auth.current()));
-      return;
-    }
-    if (!AuthUI.param('reset')) show('panelSignIn');
+    // Auth.ready() resolves instantly for the local provider, and after the
+    // real backend's first session check for a provider like Supabase.
+    Auth.ready().then(() => {
+      // Already signed in? Go straight through — unless they are resetting.
+      if (Auth.isSignedIn() && !AuthUI.param('reset')) {
+        location.replace(AuthUI.afterAuth(Auth.current()));
+        return;
+      }
+      if (!AuthUI.param('reset')) show('panelSignIn');
+    });
   }
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);

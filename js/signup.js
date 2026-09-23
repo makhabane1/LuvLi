@@ -183,6 +183,10 @@
         AuthUI.setFormError('signupFormError', 'We could not create the account just yet.');
         return;
       }
+      if (result.pendingConfirmation) {
+        showConfirmEmail(result.account);
+        return;
+      }
       showSuccess(result.account);
     }).catch(() => {
       AuthUI.loading(button, false);
@@ -201,6 +205,25 @@
     if (text) text.textContent = 'Welcome, ' + name + '. Let\'s set up your day…';
     announce('Account created. Starting onboarding.');
     setTimeout(startOnboarding, 900);
+  }
+
+  /**
+   * The account was created, but the backend (Supabase, with email
+   * confirmation turned on) needs the person to click a link before they can
+   * actually sign in. Onboarding has to wait — there is no session yet.
+   */
+  function showConfirmEmail(account) {
+    const form = $('signupForm');
+    const success = $('signupSuccess');
+    if (form) form.hidden = true;
+    if (success) success.hidden = false;
+    const text = $('signupSuccessText');
+    if (text) {
+      text.textContent = 'Almost there — we sent a confirmation link to ' +
+        (account && account.email ? account.email : 'your email') +
+        '. Open it, then sign in to finish setting up your day.';
+    }
+    announce('Check your email to confirm your account.');
   }
 
   /* ---------------------------------------------------- the onboarding side */
@@ -319,16 +342,20 @@
   /* ------------------------------------------------------------------ boot */
 
   function init() {
-    // Already signed in with preferences? There is nothing to do here.
-    if (Auth.isSignedIn() && Auth.hasPreferences()) { AuthUI.goApp(); return; }
-    // Signed in but not onboarded (e.g. they refreshed mid-flow) → onboarding.
-    if (Auth.isSignedIn() && !Auth.hasPreferences()) {
-      initOnboarding();
-      startOnboarding();
-      return;
-    }
-    initForm();
-    if (AuthUI.param('step') === 'onboarding' && Auth.isSignedIn()) startOnboarding();
+    // Auth.ready() resolves instantly for the local provider, and after the
+    // real backend's first session check for a provider like Supabase.
+    Auth.ready().then(() => {
+      // Already signed in with preferences? There is nothing to do here.
+      if (Auth.isSignedIn() && Auth.hasPreferences()) { AuthUI.goApp(); return; }
+      // Signed in but not onboarded (e.g. they refreshed mid-flow) → onboarding.
+      if (Auth.isSignedIn() && !Auth.hasPreferences()) {
+        initOnboarding();
+        startOnboarding();
+        return;
+      }
+      initForm();
+      if (AuthUI.param('step') === 'onboarding' && Auth.isSignedIn()) startOnboarding();
+    });
   }
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);

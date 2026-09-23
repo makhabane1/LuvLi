@@ -17,7 +17,12 @@
 
 (function () {
   if (typeof Auth === 'undefined') return;      // auth.js missing → stay quiet
-  if (Auth.isSignedIn()) return;                // signed in → nothing to do
-  var here = (location.pathname.split('/').pop()) || 'index.html';
-  location.replace('login.html?next=' + encodeURIComponent(here));
+  // Auth.ready() resolves instantly for the local provider, and after the
+  // real backend's first session check for a provider like Supabase — see
+  // js/auth.js's setProvider().
+  Auth.ready().then(function () {
+    if (Auth.isSignedIn()) return;               // signed in → nothing to do
+    var here = (location.pathname.split('/').pop()) || 'index.html';
+    location.replace('login.html?next=' + encodeURIComponent(here));
+  });
 })();

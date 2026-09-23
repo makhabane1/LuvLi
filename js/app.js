@@ -2563,10 +2563,13 @@ const App = (() => {
  function confirmSignOut() {
    const account = Auth.current();
    UI.closeModal();
-   Auth.signOut();
    const note = 'Signed out of ' + (account ? account.email : 'your account') + '. Sign back in whenever you like.';
-   try { sessionStorage.setItem('luvli.auth.note', note); } catch (err) { /* private mode */ }
-   location.href = 'login.html';
+   // Wait for sign-out to actually finish (a real provider makes a network
+   // call) before navigating away, so it is not cut off mid-flight.
+   Promise.resolve(Auth.signOut()).then(() => {
+     try { sessionStorage.setItem('luvli.auth.note', note); } catch (err) { /* private mode */ }
+     location.href = 'login.html';
+   });
  }
 
  /** Let the signed-in person rename themselves. */
@@ -2589,12 +2592,15 @@ const App = (() => {
    const input = $('authEditNameInput');
    const value = input ? input.value.trim() : '';
    if (!value) return;
-   Auth.update({ name: value });
-   UI.closeModal();
-   renderAccountCard();
-   renderChrome();
-   renderAll();
-   UI.toast({ icon: 'pencil', title: 'Saved ♡', body: 'Luvli will call you ' + value + ' from now on.' });
+   // Auth.update() is synchronous for the local provider, a Promise for a
+   // real one (e.g. Supabase) — Promise.resolve() handles either.
+   Promise.resolve(Auth.update({ name: value })).then(() => {
+     UI.closeModal();
+     renderAccountCard();
+     renderChrome();
+     renderAll();
+     UI.toast({ icon: 'pencil', title: 'Saved ♡', body: 'Luvli will call you ' + value + ' from now on.' });
+   });
  }
 
  /* -------------------------------- SETTINGS ------------------------------ */
@@ -3211,7 +3217,13 @@ const App = (() => {
 
  /* ♡ The route guard. Nobody uses Luvli until they have signed in — and a
     returning person with a remembered session goes straight through. The
-    account screens themselves are login.html and signup.html. */
+    account screens themselves are login.html and signup.html.
+
+    Auth.ready() resolves instantly for the local provider (so this behaves
+    exactly as before) and after the real backend's first session check for
+    a provider like Supabase — everything above this point (nav, renderAll,
+    event bindings) does not need to wait on it. */
+ Auth.ready().then(() => {
  if (!requireAuth()) return;
  renderAccountCard();
 
@@ -3222,6 +3234,7 @@ const App = (() => {
  body: 'I filled in a sample day so you can see how we work together. Change anything you like.'
  }), 900);
  }
+ });
  }
 
  init();
