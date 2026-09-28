@@ -937,6 +937,7 @@ const App = (() => {
  renderAssignments(s);
  renderExams(s);
  renderStudyNotes(s);
+ renderFlashcards(s);
  }
 
  function renderSubjects(s) {
@@ -2788,6 +2789,191 @@ const App = (() => {
  UI.toast({ icon: 'trash', title: 'Note deleted' });
  }
 
+ /* ==================== Flashcards (Student mode, stage 3) ==================== */
+
+ function renderFlashcards(s) {
+ const items = ((s.student && s.student.cards) || []).slice();
+
+ if (!items.length) {
+ setHtml('cardList',
+ '<div class="empty-state"><span class="empty-ico">' + ico('sparkles') + '</span><strong>No flashcards yet</strong>' +
+ '<p>Add a question and answer, then review whenever you like.</p>' +
+ '<button class="btn btn-primary" type="button" data-action="add-card">+ Add flashcard</button></div>');
+ return;
+ }
+
+ setHtml('cardList', items.map((card) => {
+ const subject = (s.subjects || []).find((sub) => sub.id === card.subjectId);
+ return '<div class="subject-card" data-id="' + card.id + '">' +
+ '<div class="subject-top">' +
+ '<span class="subject-emoji">' + (subject ? esc(subject.emoji) : ico('sparkles')) + '</span>' +
+ '<span class="subject-name">' + esc(card.question) + '</span>' +
+ '<span class="chip chip-soft">Confidence ' + (card.confidence || 0) + '/5</span>' +
+ '</div>' +
+ (subject ? '<div class="subject-goal">' + esc(subject.name) + '</div>' : '') +
+ '<div class="subject-actions">' +
+ '<button class="btn btn-ghost btn-small" type="button" data-action="card-edit" data-id="' + card.id + '">Edit</button>' +
+ '<button class="btn btn-danger btn-small" type="button" data-action="card-delete" data-id="' + card.id + '">Delete</button>' +
+ '</div></div>';
+ }).join(''));
+ }
+
+ function openCardModal(id) {
+ const s = state();
+ const card = id ? (s.student.cards || []).find((c) => c.id === id) : null;
+ const subjects = s.subjects || [];
+
+ UI.modal({
+ title: card ? 'Edit flashcard' : 'New flashcard',
+ sub: 'A question on one side, the answer on the other.',
+ bodyHtml:
+ '<label class="field"><span class="field-label">Question</span>' +
+ '<textarea class="input" id="cardQuestion" rows="2">' + esc(card ? card.question : '') + '</textarea></label>' +
+ '<label class="field"><span class="field-label">Answer</span>' +
+ '<textarea class="input" id="cardAnswer" rows="2">' + esc(card ? card.answer || '' : '') + '</textarea></label>' +
+ '<label class="field"><span class="field-label">Subject</span><select class="input" id="cardSubject">' +
+ '<option value="">No subject</option>' +
+ subjects.map((sub) => '<option value="' + sub.id + '"' + (card && card.subjectId === sub.id ? ' selected' : '') + '>' +
+ esc(sub.emoji + ' ' + sub.name) + '</option>').join('') +
+ '</select></label>',
+ actions: (card ? [{ label: 'Delete', action: 'card-delete', variant: 'danger', attrs: 'data-id="' + card.id + '"' }] : [])
+ .concat([
+ { label: 'Cancel', action: 'modal-cancel', variant: 'ghost' },
+ { label: card ? 'Save' : 'Add flashcard', action: 'card-save', variant: 'primary',
+ attrs: 'data-id="' + (card ? card.id : '') + '"' }
+ ])
+ });
+ }
+
+ function saveCard(id) {
+ const qInput = $('cardQuestion');
+ const question = qInput ? qInput.value.trim() : '';
+ if (!question) {
+ UI.toast({ icon: 'sparkles', title: 'What is the question, luv?', body: 'A question is all we need to start.' });
+ if (qInput) qInput.focus();
+ return;
+ }
+
+ Storage.update((draft) => {
+ const existing = id ? draft.student.cards.find((c) => c.id === id) : null;
+ const answer = (($('cardAnswer') || {}).value || '').trim();
+ const subjectId = ($('cardSubject') || {}).value || '';
+
+ if (existing) {
+ existing.question = question; existing.answer = answer; existing.subjectId = subjectId;
+ } else {
+ draft.student.cards.push({
+ id: Utils.uid('card'), question: question, answer: answer, subjectId: subjectId,
+ confidence: 0, seen: 0, right: 0, lastSeen: null, createdAt: new Date().toISOString()
+ });
+ }
+ }, 'student-card');
+
+ UI.closeModal();
+ UI.toast({ icon: 'sparkles', title: id ? 'Flashcard updated' : 'Flashcard added' });
+ }
+
+ function deleteCard(id) {
+ const card = (state().student.cards || []).find((c) => c.id === id);
+ if (!card) return;
+ confirmTarget = { kind: 'card', id: card.id };
+ UI.confirm({
+ title: 'Delete this flashcard?',
+ sub: 'This card will be removed.',
+ confirmLabel: 'Delete it',
+ confirmAction: 'card-delete-confirm',
+ variant: 'danger'
+ });
+ }
+
+ function confirmDeleteCard() {
+ const target = confirmTarget && confirmTarget.kind === 'card' ? confirmTarget.id : '';
+ confirmTarget = null;
+ UI.closeModal();
+ if (!target) return;
+ Storage.update((draft) => {
+ draft.student.cards = draft.student.cards.filter((c) => c.id !== target);
+ }, 'student-card');
+ UI.toast({ icon: 'trash', title: 'Flashcard deleted' });
+ }
+
+ /* -------------------------- flashcard review session -------------------------- */
+
+ let reviewQueue = [];
+ let reviewIndex = 0;
+ let reviewRevealed = false;
+
+ /** Least-confident cards first, so review time goes where it helps most. */
+ function openReviewModal() {
+ const cards = (state().student && state().student.cards) || [];
+ reviewQueue = cards.slice().sort((a, b) => (a.confidence || 0) - (b.confidence || 0));
+ reviewIndex = 0;
+ reviewRevealed = false;
+ renderReviewModal();
+ }
+
+ function renderReviewModal() {
+ if (!reviewQueue.length) {
+ UI.modal({
+ title: 'Nothing to review yet',
+ bodyHtml: '<p class="card-note">Add a few flashcards first, then come back to review them.</p>',
+ actions: [{ label: 'Close', action: 'modal-cancel', variant: 'primary' }]
+ });
+ return;
+ }
+
+ if (reviewIndex >= reviewQueue.length) {
+ UI.modal({
+ title: 'Nice work ♡',
+ sub: 'You reviewed ' + reviewQueue.length + ' card' + (reviewQueue.length === 1 ? '' : 's') + '.',
+ bodyHtml: '<p class="card-note">Come back any time — Luvli keeps track of how confident you are on each one.</p>',
+ actions: [{ label: 'Done', action: 'modal-cancel', variant: 'primary' }]
+ });
+ return;
+ }
+
+ const card = reviewQueue[reviewIndex];
+ const subject = (state().subjects || []).find((sub) => sub.id === card.subjectId);
+
+ UI.modal({
+ title: 'Card ' + (reviewIndex + 1) + ' of ' + reviewQueue.length,
+ sub: subject ? subject.name : 'Flashcards',
+ bodyHtml:
+ '<p class="card-note">' + esc(card.question) + '</p>' +
+ (reviewRevealed ? '<p class="card-note mt-12"><strong>Answer:</strong> ' + esc(card.answer || '—') + '</p>' : ''),
+ actions: reviewRevealed ? [
+ { label: 'Still learning', action: 'review-answer', variant: 'soft', attrs: 'data-right="0"' },
+ { label: 'Got it', action: 'review-answer', variant: 'primary', attrs: 'data-right="1"' }
+ ] : [
+ { label: 'Close', action: 'modal-cancel', variant: 'ghost' },
+ { label: 'Reveal answer', action: 'review-reveal', variant: 'primary' }
+ ]
+ });
+ }
+
+ function revealReviewAnswer() {
+ reviewRevealed = true;
+ renderReviewModal();
+ }
+
+ function answerReviewCard(correct) {
+ const card = reviewQueue[reviewIndex];
+ if (card) {
+ Storage.update((draft) => {
+ const target = draft.student.cards.find((c) => c.id === card.id);
+ if (target) {
+ target.seen = (target.seen || 0) + 1;
+ if (correct) target.right = (target.right || 0) + 1;
+ target.confidence = Utils.clamp((target.confidence || 0) + (correct ? 1 : -1), 0, 5);
+ target.lastSeen = new Date().toISOString();
+ }
+ }, 'student-card');
+ }
+ reviewIndex += 1;
+ reviewRevealed = false;
+ renderReviewModal();
+ }
+
  /** Log study you did away from Luvli. */
  function openLogSessionModal(subjectId) {
  const s = state();
@@ -3396,6 +3582,14 @@ const App = (() => {
  case 'study-note-pin':  toggleStudyNotePin(id); break;
  case 'study-note-delete':  deleteStudyNote(id); break;
  case 'study-note-delete-confirm': confirmDeleteStudyNote(); break;
+
+ case 'add-card':  UI.closeModal(); openCardModal(null); break;
+ case 'card-edit':  openCardModal(id); break;
+ case 'card-save':  saveCard(id); break;
+ case 'card-delete':  deleteCard(id); break;
+ case 'card-delete-confirm': confirmDeleteCard(); break;
+ case 'review-reveal':  revealReviewAnswer(); break;
+ case 'review-answer':  answerReviewCard(target.getAttribute('data-right') === '1'); break;
  case 'session-delete':  deleteSession(id); break;
  case 'log-save':  saveLoggedSession(); break;
 
@@ -3614,6 +3808,8 @@ const App = (() => {
  on('addAssignmentBtn', () => openAssignmentModal(null));
  on('addExamBtn', () => openExamModal(null));
  on('addStudyNoteBtn', () => openStudyNoteModal(null));
+ on('addCardBtn', () => openCardModal(null));
+ on('reviewCardsBtn', () => openReviewModal());
 
  // Affirmations
  on('afShuffleBtn', (event) => shuffleAffirmation(event));

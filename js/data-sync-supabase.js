@@ -37,6 +37,7 @@ const SupabaseSync = (() => {
   let lastAssignmentsJSON = null;
   let lastExamsJSON = null;
   let lastStudyNotesJSON = null;
+  let lastCardsJSON = null;
   let syncing = false;
   let pendingAgain = false;
 
@@ -228,6 +229,21 @@ const SupabaseSync = (() => {
       id: row.id, subjectId: row.subject_id || '', title: row.title, body: row.body || '',
       kind: row.url ? 'link' : 'note', url: row.url || '', pinned: Boolean(row.pinned),
       createdAt: row.created_at, updatedAt: row.updated_at
+    };
+  }
+
+  function cardToRow(card, uid) {
+    return {
+      id: card.id, user_id: uid, subject_id: card.subjectId || null, question: card.question,
+      answer: card.answer || '', confidence: Utils.clamp(Number(card.confidence) || 0, 0, 5),
+      seen: card.seen || 0, right: card.right || 0, last_seen: card.lastSeen || null
+    };
+  }
+  function rowToCard(row) {
+    return {
+      id: row.id, subjectId: row.subject_id || '', question: row.question, answer: row.answer || '',
+      confidence: row.confidence, seen: row.seen, right: row.right, lastSeen: row.last_seen,
+      createdAt: row.created_at
     };
   }
 
@@ -451,6 +467,7 @@ const SupabaseSync = (() => {
   function pushAssignments(items, uid) { return syncTable('assignments', items.map((a) => assignmentToRow(a, uid)), uid); }
   function pushExams(items, uid) { return syncTable('exams', items.map((e) => examToRow(e, uid)), uid); }
   function pushStudyNotes(items, uid) { return syncTable('study_notes', items.map((n) => studyNoteToRow(n, uid)), uid); }
+  function pushCards(items, uid) { return syncTable('flashcards', items.map((c) => cardToRow(c, uid)), uid); }
 
   // Boards must sync before items: vision_board_items.board_id is a real FK
   // to vision_boards.id, so inserting an item before its board exists (or
@@ -510,6 +527,7 @@ const SupabaseSync = (() => {
     const assignmentsJSON = JSON.stringify((state.student && state.student.assignments) || []);
     const examsJSON = JSON.stringify((state.student && state.student.exams) || []);
     const studyNotesJSON = JSON.stringify((state.student && state.student.notes) || []);
+    const cardsJSON = JSON.stringify((state.student && state.student.cards) || []);
     const tasksChanged = tasksJSON !== lastTasksJSON;
     const backlogChanged = backlogJSON !== lastBacklogJSON;
     const settingsChanged = settingsJSON !== lastSettingsJSON;
@@ -524,10 +542,11 @@ const SupabaseSync = (() => {
     const assignmentsChanged = assignmentsJSON !== lastAssignmentsJSON;
     const examsChanged = examsJSON !== lastExamsJSON;
     const studyNotesChanged = studyNotesJSON !== lastStudyNotesJSON;
+    const cardsChanged = cardsJSON !== lastCardsJSON;
     if (!tasksChanged && !backlogChanged && !settingsChanged && !profileChanged
       && !sessionsChanged && !checkInsChanged && !nightReviewsChanged
       && !subjectsChanged && !personalityChanged && !affirmationsChanged && !visionBoardChanged
-      && !assignmentsChanged && !examsChanged && !studyNotesChanged) return;
+      && !assignmentsChanged && !examsChanged && !studyNotesChanged && !cardsChanged) return;
 
     if (syncing) { pendingAgain = true; return; }
     syncing = true;
@@ -547,6 +566,7 @@ const SupabaseSync = (() => {
     if (assignmentsChanged) jobs.push(pushAssignments((state.student && state.student.assignments) || [], uid).then(() => { lastAssignmentsJSON = assignmentsJSON; }));
     if (examsChanged) jobs.push(pushExams((state.student && state.student.exams) || [], uid).then(() => { lastExamsJSON = examsJSON; }));
     if (studyNotesChanged) jobs.push(pushStudyNotes((state.student && state.student.notes) || [], uid).then(() => { lastStudyNotesJSON = studyNotesJSON; }));
+    if (cardsChanged) jobs.push(pushCards((state.student && state.student.cards) || [], uid).then(() => { lastCardsJSON = cardsJSON; }));
 
     Promise.all(jobs).catch((err) => {
       console.error('Luvli: could not sync to Supabase', err);
@@ -585,9 +605,10 @@ const SupabaseSync = (() => {
       client().from('vision_board_items').select('*').eq('user_id', uid),
       client().from('assignments').select('*').eq('user_id', uid),
       client().from('exams').select('*').eq('user_id', uid),
-      client().from('study_notes').select('*').eq('user_id', uid)
+      client().from('study_notes').select('*').eq('user_id', uid),
+      client().from('flashcards').select('*').eq('user_id', uid)
     ]).then(([tasksRes, backlogRes, settingsRes, profileRes, sessionsRes, checkInsRes, nightReviewsRes,
-      subjectsRes, personalityRes, affirmationsRes, vbBoardsRes, vbItemsRes, assignmentsRes, examsRes, studyNotesRes]) => {
+      subjectsRes, personalityRes, affirmationsRes, vbBoardsRes, vbItemsRes, assignmentsRes, examsRes, studyNotesRes, cardsRes]) => {
       if (tasksRes.error) throw tasksRes.error;
       if (backlogRes.error) throw backlogRes.error;
       if (settingsRes.error) throw settingsRes.error;
@@ -603,6 +624,7 @@ const SupabaseSync = (() => {
       if (assignmentsRes.error) throw assignmentsRes.error;
       if (examsRes.error) throw examsRes.error;
       if (studyNotesRes.error) throw studyNotesRes.error;
+      if (cardsRes.error) throw cardsRes.error;
 
       const cloudTasks = tasksRes.data.map(rowToTask);
       const cloudBacklog = backlogRes.data.map(rowToBacklog);
@@ -778,6 +800,16 @@ const SupabaseSync = (() => {
       } else {
         Storage.update((draft) => { draft.student.notes = cloudStudyNotes; }, 'supabase-pull', { undo: false });
         lastStudyNotesJSON = JSON.stringify(cloudStudyNotes);
+      }
+
+      const cloudCards = cardsRes.data.map(rowToCard);
+      const localCards = (state.student && state.student.cards) || [];
+      if (!cloudCards.length && localCards.length) {
+        lastCardsJSON = JSON.stringify([]);
+        pushJobs.push(pushCards(localCards, uid).then(() => { lastCardsJSON = JSON.stringify(localCards); }));
+      } else {
+        Storage.update((draft) => { draft.student.cards = cloudCards; }, 'supabase-pull', { undo: false });
+        lastCardsJSON = JSON.stringify(cloudCards);
       }
 
       return Promise.all(pushJobs).then(() => {});
