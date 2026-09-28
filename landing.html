@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<!--
+ Luvli ♡ — public landing page
+ -----------------------------------------------------------------------------
+ The actual entry point at https://luvli.netlify.app/ (see netlify.toml's
+ redirect from "/" to "/landing.html"). index.html — the app itself — is
+ still reachable directly and unchanged; every existing internal link to it
+ keeps working. Purely static: icons.js hydrates the data-ico icons, nothing
+ else runs here.
+-->
+<html lang="en" data-theme="rose">
+<head>
+ <meta charset="UTF-8" />
+ <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+ <title>Luvli — make every day feel intentional</title>
+ <meta name="description" content="Luvli plans your day, tells you what's happening right now, and gently keeps you company — study tools, focus timer, mood tracking and more, all in one gentle app." />
+ <meta name="theme-color" content="#FDF7FB" />
+ <link rel="manifest" href="manifest.json" />
+ <link rel="icon" href="assets/icon.svg" type="image/svg+xml" />
+ <link rel="apple-touch-icon" href="assets/icon-192.png" />
+ <link rel="stylesheet" href="css/style.css" />
+ <link rel="stylesheet" href="css/auth.css" />
+ <link rel="stylesheet" href="css/landing.css" />
+</head>
+<body>
+
+ <div class="auth-bg" aria-hidden="true">
+   <div class="auth-blobs">
+     <span class="auth-blob b1"></span>
+     <span class="auth-blob b2"></span>
+     <span class="auth-blob b3"></span>
+     <span class="auth-blob b4"></span>
+   </div>
+ </div>
+
+ <div class="landing-shell">
+
+   <div class="landing-topbar">
+     <div class="auth-brand">
+       <span class="auth-mark" data-ico="heart" aria-hidden="true"></span>
+       <span class="auth-brand-text">
+         <span class="brand-word">Luvli</span>
+       </span>
+     </div>
+     <a class="btn btn-soft btn-small" href="login.html">Sign in</a>
+   </div>
+
+   <section class="landing-hero">
+     <h1>Make every day feel <span class="landing-tagline">luvli</span>.</h1>
+     <p class="landing-sub">
+       Luvli plans your day, tells you what's happening right now, holds the time while
+       you focus, and reminds you softly — never makes you feel bad when you fall behind.
+     </p>
+     <div class="landing-cta-row">
+       <a class="btn btn-primary btn-hero landing-cta-primary" href="signup.html">
+         Get started free
+       </a>
+       <a class="btn btn-ghost" href="login.html">I already have an account</a>
+     </div>
+     <div class="landing-trust-row">
+       <span class="auth-trust-chip"><span data-ico="lock" aria-hidden="true"></span> Private by design</span>
+       <span class="auth-trust-chip"><span data-ico="cpu" aria-hidden="true"></span> Works offline</span>
+       <span class="auth-trust-chip"><span data-ico="heart" aria-hidden="true"></span> Free to start</span>
+     </div>
+   </section>
+
+   <section class="landing-features" aria-label="What Luvli does">
+     <div class="landing-feature-card">
+       <span class="landing-feature-ico" data-ico="calendar" aria-hidden="true"></span>
+       <h3>Smart day planning</h3>
+       <p>Type "python 45m high tomorrow 10:00" and Luvli fills in the form. Clash detection,
+       Optimize My Day and gentle routines do the rest.</p>
+     </div>
+     <div class="landing-feature-card">
+       <span class="landing-feature-ico" data-ico="timer" aria-hidden="true"></span>
+       <h3>Focus mode</h3>
+       <p>A real Pomodoro timer — 25/5, 40/10, 50/10 or your own — with full-screen focus,
+       a soft chime and rotating affirmations.</p>
+     </div>
+     <div class="landing-feature-card">
+       <span class="landing-feature-ico" data-ico="book" aria-hidden="true"></span>
+       <h3>Study tools</h3>
+       <p>Subjects, assignments, exams, flashcards with spaced review, and revision plans
+       built for you from an upcoming exam.</p>
+     </div>
+     <div class="landing-feature-card">
+       <span class="landing-feature-ico" data-ico="chart" aria-hidden="true"></span>
+       <h3>Mood &amp; progress</h3>
+       <p>Gentle daily check-ins, streaks, and a weekly view of what actually got done —
+       no guilt, just an honest picture.</p>
+     </div>
+     <div class="landing-feature-card">
+       <span class="landing-feature-ico" data-ico="image" aria-hidden="true"></span>
+       <h3>Vision board</h3>
+       <p>Collect the pictures and words for the life you're building toward, right next
+       to the plan that gets you there.</p>
+     </div>
+     <div class="landing-feature-card">
+       <span class="landing-feature-ico" data-ico="lock" aria-hidden="true"></span>
+       <h3>Private &amp; secure</h3>
+       <p>Real accounts, encrypted at rest, protected so only you can ever see your data —
+       synced across every device you use.</p>
+     </div>
+   </section>
+
+   <section class="landing-closing">
+     <h2>Your day is waiting, luv.</h2>
+     <p>Takes less than a minute to start — no card, no pressure.</p>
+     <a class="btn btn-primary" href="signup.html">Create your account</a>
+   </section>
+
+   <footer class="landing-foot">
+     <span>© <span id="landingYear">2026</span> Luvli</span>
+     <div class="landing-foot-links">
+       <a href="privacy.html">Privacy</a>
+       <a href="terms.html">Terms</a>
+       <a href="login.html">Sign in</a>
+       <a href="signup.html">Sign up</a>
+     </div>
+   </footer>
+
+ </div>
+
+ <script src="js/icons.js"></script>
+ <script>document.getElementById('landingYear').textContent = new Date().getFullYear();</script>
+</body>
+</html>

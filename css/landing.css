@@ -1,0 +1,165 @@
+/* =============================================================================
+   landing.css — the public marketing page (landing.html)
+   -----------------------------------------------------------------------------
+   Reuses css/style.css's design tokens and css/auth.css's animated aurora
+   background (.auth-bg/.auth-blobs) for visual consistency with the rest of
+   Luvli. Everything landing-page-specific lives here, prefixed .landing-*.
+   ========================================================================== */
+
+.landing-shell {
+  position: relative;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 0 20px 60px;
+}
+
+/* ------------------------------- topbar ---------------------------------- */
+.landing-topbar {
+  width: 100%;
+  max-width: 1100px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 22px 4px;
+}
+.landing-topbar .auth-brand-text .brand-word { font-size: 1.3rem; }
+
+/* -------------------------------- hero ------------------------------------ */
+.landing-hero {
+  width: 100%;
+  max-width: 720px;
+  text-align: center;
+  margin: 48px 0 40px;
+}
+.landing-hero h1 {
+  font-family: var(--font-display);
+  font-size: clamp(2.1rem, 5vw, 3.2rem);
+  font-weight: 800;
+  color: var(--ink);
+  letter-spacing: -.01em;
+  line-height: 1.12;
+  margin: 0 0 16px;
+}
+.landing-hero .landing-tagline {
+  font-family: var(--font-serif);
+  font-style: italic;
+  color: var(--deep-rose);
+}
+.landing-hero p.landing-sub {
+  font-size: 17px;
+  color: var(--text);
+  line-height: 1.55;
+  max-width: 560px;
+  margin: 0 auto 28px;
+}
+.landing-cta-row {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+.landing-cta-primary { width: auto; padding-left: 28px; padding-right: 28px; }
+.landing-trust-row {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-top: 22px;
+}
+
+/* ------------------------------- features ---------------------------------- */
+.landing-features {
+  width: 100%;
+  max-width: 1100px;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 16px;
+  margin: 24px 0 48px;
+}
+@media (min-width: 720px) {
+  .landing-features { grid-template-columns: repeat(2, 1fr); }
+}
+@media (min-width: 1020px) {
+  .landing-features { grid-template-columns: repeat(3, 1fr); }
+}
+.landing-feature-card {
+  padding: 22px;
+  border-radius: var(--r-lg);
+  background: var(--surface);
+  border: 1px solid var(--hairline);
+  box-shadow: var(--sheen), var(--shadow-xs);
+}
+.landing-feature-ico {
+  width: 42px; height: 42px;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: 12px;
+  background: var(--grad-pink);
+  color: var(--deep-rose);
+  margin-bottom: 14px;
+}
+.landing-feature-ico svg { width: 20px; height: 20px; stroke-width: 1.8; }
+.landing-feature-card h3 {
+  font-family: var(--font-display);
+  font-size: 16.5px;
+  font-weight: 700;
+  color: var(--ink);
+  margin: 0 0 6px;
+}
+.landing-feature-card p {
+  font-size: 14px;
+  color: var(--muted);
+  line-height: 1.5;
+  margin: 0;
+}
+
+/* -------------------------------- closing cta ------------------------------ */
+.landing-closing {
+  width: 100%;
+  max-width: 560px;
+  text-align: center;
+  padding: 36px 28px;
+  border-radius: var(--r-lg);
+  background: var(--grad-rose);
+  box-shadow: var(--shadow-md);
+  margin-bottom: 40px;
+}
+.landing-closing h2 {
+  font-family: var(--font-display);
+  color: #fff;
+  font-size: 1.4rem;
+  margin: 0 0 8px;
+}
+.landing-closing p {
+  color: rgba(255, 255, 255, .92);
+  font-size: 14.5px;
+  margin: 0 0 20px;
+}
+.landing-closing .btn-primary {
+  background: #fff;
+  color: var(--deep-rose);
+  border: none;
+}
+
+/* --------------------------------- footer ---------------------------------- */
+.landing-foot {
+  width: 100%;
+  max-width: 1100px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding-top: 24px;
+  border-top: 1px solid var(--hairline);
+  font-size: 13px;
+  color: var(--muted);
+}
+.landing-foot-links { display: flex; gap: 18px; flex-wrap: wrap; }
+.landing-foot-links a { color: var(--muted); text-decoration: none; }
+.landing-foot-links a:hover { color: var(--deep-rose); }
+
+@media (max-width: 480px) {
+  .landing-cta-row .btn { width: 100%; }
+}

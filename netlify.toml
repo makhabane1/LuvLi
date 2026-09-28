@@ -12,6 +12,15 @@
   publish = "."
   functions = "netlify/functions"
 
+# The bare domain shows the public marketing page (landing.html) instead of
+# the app shell. index.html (the app) is untouched and still reachable
+# directly — every existing internal "location.href = 'index.html'" link
+# keeps working exactly as before.
+[[redirects]]
+  from = "/"
+  to = "/landing.html"
+  status = 200
+
 # /api/luvli-coach  →  the serverless function
 [[redirects]]
   from = "/api/luvli-coach"
