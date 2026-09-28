@@ -55,22 +55,40 @@ const SupabaseSync = (() => {
     return Boolean(provider && provider.isLocal === false);
   }
 
+  /* ------------------------------------------------------- sanitizing ----
+     Local data can hold values the database's CHECK/FK constraints reject —
+     the sample day, for instance, gives assignments status 'in-progress' /
+     'not-started' (the DB only allows pending | in_progress | done). One
+     rejected row fails a whole table's push, so every *ToRow() below maps
+     values into what the schema accepts rather than sending them raw. */
+
+  const oneOf = (value, allowed, fallback) => (allowed.indexOf(value) > -1 ? value : fallback);
+  const clampInt = (value, min, max) => Math.min(max, Math.max(min, Math.round(Number(value) || 0)));
+  /** A lookup of the ids currently in a local list, e.g. { sub_abc: true }. */
+  const idSet = (list) => { const set = {}; (list || []).forEach((x) => { set[x.id] = true; }); return set; };
+  /** A foreign-key reference — or null if it points at something that no longer exists locally. */
+  const ref = (id, known) => (id && known && known[id] ? id : null);
+  const PRIORITIES = ['low', 'medium', 'high'];
+
   /* ------------------------------------------------------------ mapping -- */
 
   function taskToRow(task, uid) {
+    const start = String(task.start || '00:00').slice(0, 5);
+    let end = String(task.end || '').slice(0, 5);
+    if (!end || end <= start) end = '23:59';   // DB requires end_time > start_time
     return {
       id: task.id,
       user_id: uid,
       date: task.date,
-      name: task.name,
+      name: task.name || 'Untitled',
       category: task.category || 'other',
-      start_time: task.start,
-      end_time: task.end,
-      priority: task.priority || 'medium',
+      start_time: start,
+      end_time: end,
+      priority: oneOf(task.priority, PRIORITIES, 'medium'),
       notes: task.notes || '',
       completed: Boolean(task.completed),
       completed_at: task.completedAt || null,
-      repeat: task.repeat || 'none',
+      repeat: oneOf(task.repeat, ['none', 'daily', 'weekdays', 'weekly'], 'none'),
       series_id: task.seriesId || null
     };
   }
@@ -98,11 +116,11 @@ const SupabaseSync = (() => {
     return {
       id: item.id,
       user_id: uid,
-      name: item.name,
+      name: item.name || 'Untitled',
       category: item.category || 'other',
-      priority: item.priority || 'medium',
-      duration_minutes: item.duration || 30,
-      status: item.status || 'backlog',
+      priority: oneOf(item.priority, PRIORITIES, 'medium'),
+      duration_minutes: Math.max(1, Math.round(Number(item.duration) || 30)),
+      status: oneOf(item.status, ['backlog', 'scheduled', 'removed'], 'backlog'),
       repeat: item.repeat || 'none'
     };
   }
@@ -199,9 +217,9 @@ const SupabaseSync = (() => {
       subject_id: null,
       subject_name: session.subjectName || '',
       goal: session.goal || '',
-      minutes: session.minutes,
+      minutes: Math.max(1, Math.round(Number(session.minutes) || 1)),
       date: session.date,
-      type: session.type || 'focus',
+      type: oneOf(session.type, ['focus', 'study', 'break'], 'focus'),
       ended_at: session.endedAt || new Date().toISOString()
     };
   }
@@ -219,9 +237,9 @@ const SupabaseSync = (() => {
     };
   }
 
-  function studyNoteToRow(note, uid) {
+  function studyNoteToRow(note, uid, subjects) {
     return {
-      id: note.id, user_id: uid, subject_id: note.subjectId || null, title: note.title,
+      id: note.id, user_id: uid, subject_id: ref(note.subjectId, subjects), title: note.title || 'Untitled',
       body: note.body || '', url: note.url || null, pinned: Boolean(note.pinned)
     };
   }
@@ -233,11 +251,12 @@ const SupabaseSync = (() => {
     };
   }
 
-  function cardToRow(card, uid) {
+  function cardToRow(card, uid, subjects) {
     return {
-      id: card.id, user_id: uid, subject_id: card.subjectId || null, question: card.question,
-      answer: card.answer || '', confidence: Utils.clamp(Number(card.confidence) || 0, 0, 5),
-      seen: card.seen || 0, right: card.right || 0, last_seen: card.lastSeen || null
+      id: card.id, user_id: uid, subject_id: ref(card.subjectId, subjects), question: card.question || 'Untitled',
+      answer: card.answer || '', confidence: clampInt(card.confidence, 0, 5),
+      seen: Math.max(0, Math.round(Number(card.seen) || 0)), right: Math.max(0, Math.round(Number(card.right) || 0)),
+      last_seen: card.lastSeen || null
     };
   }
   function rowToCard(row) {
@@ -248,10 +267,10 @@ const SupabaseSync = (() => {
     };
   }
 
-  function planToRow(plan, uid) {
+  function planToRow(plan, uid, subjects, exams) {
     return {
-      id: plan.id, user_id: uid, exam_id: plan.examId || null, subject_id: plan.subjectId || null,
-      name: plan.name, sessions: plan.sessions || []
+      id: plan.id, user_id: uid, exam_id: ref(plan.examId, exams), subject_id: ref(plan.subjectId, subjects),
+      name: plan.name || 'Revision plan', sessions: plan.sessions || []
     };
   }
   function rowToPlan(row) {
@@ -261,11 +280,20 @@ const SupabaseSync = (() => {
     };
   }
 
-  function assignmentToRow(a, uid) {
+  /** 'in-progress' / 'not-started' (sample day) etc. → the DB's pending | in_progress | done. */
+  function assignmentStatus(status) {
+    const s = String(status || '').toLowerCase().replace(/[\s-]+/g, '_');
+    if (s === 'done' || s === 'complete' || s === 'completed') return 'done';
+    if (s === 'in_progress' || s === 'started') return 'in_progress';
+    return 'pending';
+  }
+
+  function assignmentToRow(a, uid, subjects) {
+    const estimate = Math.round(Number(a.estimateMinutes));
     return {
-      id: a.id, user_id: uid, subject_id: a.subjectId || null, name: a.name,
-      due_date: a.dueDate || null, difficulty: a.difficulty || 'medium',
-      estimate_minutes: a.estimateMinutes || null, status: a.status || 'pending',
+      id: a.id, user_id: uid, subject_id: ref(a.subjectId, subjects), name: a.name || 'Untitled',
+      due_date: a.dueDate || null, difficulty: oneOf(a.difficulty, ['easy', 'medium', 'hard'], 'medium'),
+      estimate_minutes: estimate > 0 ? estimate : null, status: assignmentStatus(a.status),
       notes: a.notes || ''
     };
   }
@@ -277,10 +305,11 @@ const SupabaseSync = (() => {
     };
   }
 
-  function examToRow(exam, uid) {
+  function examToRow(exam, uid, subjects) {
     return {
-      id: exam.id, user_id: uid, subject_id: exam.subjectId || null, name: exam.name,
-      exam_date: exam.examDate || null, topics: exam.topics || [], confidence: exam.confidence || null,
+      id: exam.id, user_id: uid, subject_id: ref(exam.subjectId, subjects), name: exam.name || 'Untitled',
+      exam_date: exam.examDate || null, topics: Array.isArray(exam.topics) ? exam.topics : [],
+      confidence: exam.confidence ? clampInt(exam.confidence, 1, 5) : null,
       notes: exam.notes || ''
     };
   }
@@ -300,10 +329,10 @@ const SupabaseSync = (() => {
     return {
       id: subject.id,
       user_id: uid,
-      name: subject.name,
+      name: subject.name || 'Untitled',
       emoji: subject.emoji || '📚',
       goal: subject.goal || '',
-      progress: Number(subject.progress) || 0,
+      progress: clampInt(subject.progress, 0, 100),
       teacher: subject.teacher || '',
       notes: subject.notes || ''
     };
@@ -373,7 +402,8 @@ const SupabaseSync = (() => {
     const custom = (affirmations.custom || []).map((text) => ({
       user_id: uid, text, is_custom: true, is_favorite: false, category: null
     }));
-    return favourites.concat(custom);
+    // text is NOT NULL with a length check — drop anything empty.
+    return favourites.concat(custom).filter((r) => typeof r.text === 'string' && r.text.trim());
   }
 
   function rowsToAffirmations(rows) {
@@ -419,7 +449,7 @@ const SupabaseSync = (() => {
   function nightReviewsToRows(nightReviews, uid) {
     return Object.keys(nightReviews)
       .filter((date) => nightReviews[date] && Number(nightReviews[date].rating) >= 1)
-      .map((date) => ({ user_id: uid, date, rating: Number(nightReviews[date].rating) }));
+      .map((date) => ({ user_id: uid, date, rating: clampInt(nightReviews[date].rating, 1, 5) }));
   }
 
   /** Recompute state.focusDays from state.sessions — the same shape the app already maintains incrementally. */
@@ -478,11 +508,17 @@ const SupabaseSync = (() => {
   }
 
   function pushSubjects(subjects, uid) { return syncTable('subjects', subjects.map((s) => subjectToRow(s, uid)), uid); }
-  function pushAssignments(items, uid) { return syncTable('assignments', items.map((a) => assignmentToRow(a, uid)), uid); }
-  function pushExams(items, uid) { return syncTable('exams', items.map((e) => examToRow(e, uid)), uid); }
-  function pushStudyNotes(items, uid) { return syncTable('study_notes', items.map((n) => studyNoteToRow(n, uid)), uid); }
-  function pushCards(items, uid) { return syncTable('flashcards', items.map((c) => cardToRow(c, uid)), uid); }
-  function pushPlans(items, uid) { return syncTable('revision_plans', items.map((p) => planToRow(p, uid)), uid); }
+  // These reference subjects (and plans also exams) by FK, so they take the
+  // set of ids that exist locally and null out any reference to something
+  // that's gone — e.g. an assignment whose subject was deleted.
+  function pushAssignments(items, uid, subjects) { return syncTable('assignments', items.map((a) => assignmentToRow(a, uid, subjects)), uid); }
+  function pushExams(items, uid, subjects) { return syncTable('exams', items.map((e) => examToRow(e, uid, subjects)), uid); }
+  function pushStudyNotes(items, uid, subjects) { return syncTable('study_notes', items.map((n) => studyNoteToRow(n, uid, subjects)), uid); }
+  function pushCards(items, uid, subjects) { return syncTable('flashcards', items.map((c) => cardToRow(c, uid, subjects)), uid); }
+  function pushPlans(items, uid, subjects, exams) { return syncTable('revision_plans', items.map((p) => planToRow(p, uid, subjects, exams)), uid); }
+
+  /** Run fn once `gate` settles — success or failure — so a failed parent push doesn't silently swallow the dependent one. */
+  const after = (gate, fn) => Promise.resolve(gate).catch(() => {}).then(fn);
 
   // Boards must sync before items: vision_board_items.board_id is a real FK
   // to vision_boards.id, so inserting an item before its board exists (or
@@ -585,19 +621,34 @@ const SupabaseSync = (() => {
     if (sessionsChanged) jobs.push(pushSessions(state.sessions, uid).then(() => { lastSessionsJSON = sessionsJSON; }));
     if (checkInsChanged) jobs.push(pushCheckIns(state.checkIns, uid).then(() => { lastCheckInsJSON = checkInsJSON; }));
     if (nightReviewsChanged) jobs.push(pushNightReviews(state.nightReviews, uid).then(() => { lastNightReviewsJSON = nightReviewsJSON; }));
-    if (subjectsChanged) jobs.push(pushSubjects(state.subjects, uid).then(() => { lastSubjectsJSON = subjectsJSON; }));
     if (personalityChanged) jobs.push(pushPersonality(state, uid).then(() => { lastPersonalityJSON = personalityJSON; }));
     if (affirmationsChanged) jobs.push(pushAffirmations(state.affirmations, uid).then(() => { lastAffirmationsJSON = affirmationsJSON; }));
     if (visionBoardChanged) jobs.push(pushVisionBoard(state.visionboard || { boards: [], items: [] }, uid).then(() => { lastVisionBoardJSON = visionBoardJSON; }));
-    if (assignmentsChanged) jobs.push(pushAssignments((state.student && state.student.assignments) || [], uid).then(() => { lastAssignmentsJSON = assignmentsJSON; }));
-    if (examsChanged) jobs.push(pushExams((state.student && state.student.exams) || [], uid).then(() => { lastExamsJSON = examsJSON; }));
-    if (studyNotesChanged) jobs.push(pushStudyNotes((state.student && state.student.notes) || [], uid).then(() => { lastStudyNotesJSON = studyNotesJSON; }));
-    if (cardsChanged) jobs.push(pushCards((state.student && state.student.cards) || [], uid).then(() => { lastCardsJSON = cardsJSON; }));
-    if (plansChanged) jobs.push(pushPlans((state.student && state.student.plans) || [], uid).then(() => { lastPlansJSON = plansJSON; }));
 
-    Promise.all(jobs).catch((err) => {
-      console.error('Luvli: could not sync to Supabase', err);
-      notifySyncFailed();
+    // Order matters here: assignments/exams/notes/cards reference subjects by
+    // FK, and plans reference exams — parents must land first.
+    const student = state.student || {};
+    const subjectIds = idSet(state.subjects);
+    const examIds = idSet(student.exams);
+    const subjectsJob = subjectsChanged
+      ? pushSubjects(state.subjects, uid).then(() => { lastSubjectsJSON = subjectsJSON; }) : Promise.resolve();
+    const examsJob = examsChanged
+      ? after(subjectsJob, () => pushExams(student.exams || [], uid, subjectIds)).then(() => { lastExamsJSON = examsJSON; }) : Promise.resolve();
+    jobs.push(subjectsJob, examsJob);
+    if (assignmentsChanged) jobs.push(after(subjectsJob, () => pushAssignments(student.assignments || [], uid, subjectIds)).then(() => { lastAssignmentsJSON = assignmentsJSON; }));
+    if (studyNotesChanged) jobs.push(after(subjectsJob, () => pushStudyNotes(student.notes || [], uid, subjectIds)).then(() => { lastStudyNotesJSON = studyNotesJSON; }));
+    if (cardsChanged) jobs.push(after(subjectsJob, () => pushCards(student.cards || [], uid, subjectIds)).then(() => { lastCardsJSON = cardsJSON; }));
+    if (plansChanged) jobs.push(after(Promise.allSettled([subjectsJob, examsJob]), () => pushPlans(student.plans || [], uid, subjectIds, examIds)).then(() => { lastPlansJSON = plansJSON; }));
+
+    // allSettled, not all: wait for every push to finish before allowing the
+    // next sync, and one failed table doesn't hide the others' results. A
+    // failed table keeps its old last*JSON, so it's retried next change.
+    Promise.allSettled(jobs).then((results) => {
+      const failed = results.filter((r) => r.status === 'rejected');
+      if (failed.length) {
+        console.error('Luvli: could not sync to Supabase', failed.map((f) => f.reason));
+        notifySyncFailed();
+      }
     }).finally(() => {
       syncing = false;
       if (pendingAgain) { pendingAgain = false; maybeSync(); }
@@ -661,6 +712,11 @@ const SupabaseSync = (() => {
       const localHasData = (state.tasks && state.tasks.length) || (state.backlog && state.backlog.length);
       const cloudIsEmpty = !cloudTasks.length && !cloudBacklog.length;
       const pushJobs = [];
+      // Parents must land before children (FKs) — see maybeSync().
+      let subjectsJob = Promise.resolve();
+      let examsJob = Promise.resolve();
+      const liveSubjectIds = () => idSet(Storage.get().subjects);
+      const liveExamIds = () => idSet((Storage.get().student || {}).exams);
 
       if (cloudIsEmpty && localHasData) {
         lastTasksJSON = JSON.stringify([]);
@@ -750,7 +806,8 @@ const SupabaseSync = (() => {
       const localHasSubjects = state.subjects && state.subjects.length;
       if (!cloudSubjects.length && localHasSubjects) {
         lastSubjectsJSON = JSON.stringify([]);
-        pushJobs.push(pushSubjects(state.subjects, uid).then(() => { lastSubjectsJSON = JSON.stringify(state.subjects); }));
+        subjectsJob = pushSubjects(state.subjects, uid).then(() => { lastSubjectsJSON = JSON.stringify(state.subjects); });
+        pushJobs.push(subjectsJob);
       } else {
         Storage.update((draft) => { draft.subjects = cloudSubjects; }, 'supabase-pull', { undo: false });
         lastSubjectsJSON = JSON.stringify(cloudSubjects);
@@ -805,7 +862,8 @@ const SupabaseSync = (() => {
       const localAssignments = (state.student && state.student.assignments) || [];
       if (!cloudAssignments.length && localAssignments.length) {
         lastAssignmentsJSON = JSON.stringify([]);
-        pushJobs.push(pushAssignments(localAssignments, uid).then(() => { lastAssignmentsJSON = JSON.stringify(localAssignments); }));
+        pushJobs.push(after(subjectsJob, () => pushAssignments(localAssignments, uid, liveSubjectIds()))
+          .then(() => { lastAssignmentsJSON = JSON.stringify(localAssignments); }));
       } else {
         Storage.update((draft) => { draft.student.assignments = cloudAssignments; }, 'supabase-pull', { undo: false });
         lastAssignmentsJSON = JSON.stringify(cloudAssignments);
@@ -815,7 +873,9 @@ const SupabaseSync = (() => {
       const localExams = (state.student && state.student.exams) || [];
       if (!cloudExams.length && localExams.length) {
         lastExamsJSON = JSON.stringify([]);
-        pushJobs.push(pushExams(localExams, uid).then(() => { lastExamsJSON = JSON.stringify(localExams); }));
+        examsJob = after(subjectsJob, () => pushExams(localExams, uid, liveSubjectIds()))
+          .then(() => { lastExamsJSON = JSON.stringify(localExams); });
+        pushJobs.push(examsJob);
       } else {
         Storage.update((draft) => { draft.student.exams = cloudExams; }, 'supabase-pull', { undo: false });
         lastExamsJSON = JSON.stringify(cloudExams);
@@ -825,7 +885,8 @@ const SupabaseSync = (() => {
       const localStudyNotes = (state.student && state.student.notes) || [];
       if (!cloudStudyNotes.length && localStudyNotes.length) {
         lastStudyNotesJSON = JSON.stringify([]);
-        pushJobs.push(pushStudyNotes(localStudyNotes, uid).then(() => { lastStudyNotesJSON = JSON.stringify(localStudyNotes); }));
+        pushJobs.push(after(subjectsJob, () => pushStudyNotes(localStudyNotes, uid, liveSubjectIds()))
+          .then(() => { lastStudyNotesJSON = JSON.stringify(localStudyNotes); }));
       } else {
         Storage.update((draft) => { draft.student.notes = cloudStudyNotes; }, 'supabase-pull', { undo: false });
         lastStudyNotesJSON = JSON.stringify(cloudStudyNotes);
@@ -835,7 +896,8 @@ const SupabaseSync = (() => {
       const localCards = (state.student && state.student.cards) || [];
       if (!cloudCards.length && localCards.length) {
         lastCardsJSON = JSON.stringify([]);
-        pushJobs.push(pushCards(localCards, uid).then(() => { lastCardsJSON = JSON.stringify(localCards); }));
+        pushJobs.push(after(subjectsJob, () => pushCards(localCards, uid, liveSubjectIds()))
+          .then(() => { lastCardsJSON = JSON.stringify(localCards); }));
       } else {
         Storage.update((draft) => { draft.student.cards = cloudCards; }, 'supabase-pull', { undo: false });
         lastCardsJSON = JSON.stringify(cloudCards);
@@ -845,13 +907,24 @@ const SupabaseSync = (() => {
       const localPlans = (state.student && state.student.plans) || [];
       if (!cloudPlans.length && localPlans.length) {
         lastPlansJSON = JSON.stringify([]);
-        pushJobs.push(pushPlans(localPlans, uid).then(() => { lastPlansJSON = JSON.stringify(localPlans); }));
+        pushJobs.push(after(Promise.allSettled([subjectsJob, examsJob]), () => pushPlans(localPlans, uid, liveSubjectIds(), liveExamIds()))
+          .then(() => { lastPlansJSON = JSON.stringify(localPlans); }));
       } else {
         Storage.update((draft) => { draft.student.plans = cloudPlans; }, 'supabase-pull', { undo: false });
         lastPlansJSON = JSON.stringify(cloudPlans);
       }
 
-      return Promise.all(pushJobs).then(() => {});
+      // The cloud data has loaded by this point — only the "upload what this
+      // device had that the cloud didn't" pushes remain. Their failure must
+      // not count as a failed load (that used to block syncing for the whole
+      // visit); report it, and let maybeSync() retry on the next change.
+      return Promise.allSettled(pushJobs).then((results) => {
+        const failed = results.filter((r) => r.status === 'rejected');
+        if (failed.length) {
+          console.error('Luvli: some local data could not be uploaded yet', failed.map((f) => f.reason));
+          notifySyncFailed();
+        }
+      });
     });
   }
 
