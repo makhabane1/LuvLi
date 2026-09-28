@@ -489,7 +489,16 @@ const SupabaseSync = (() => {
   // pruning a board while its items still reference it) would fail.
   function pushVisionBoard(vb, uid) {
     const boardRows = (vb.boards || []).map((b) => boardToRow(b, uid));
-    const itemRows = (vb.items || []).map((i) => vbItemToRow(i, uid));
+    // Safety net: an item pointing at a board that isn't in this push would
+    // violate the FK and fail the whole sync, every time, forever. Re-home it
+    // to the first board rather than let one bad item block everything.
+    const boardIds = {};
+    boardRows.forEach((b) => { boardIds[b.id] = true; });
+    const fallbackBoard = boardRows[0] && boardRows[0].id;
+    const itemRows = (vb.items || [])
+      .map((i) => (boardIds[i.boardId] || !fallbackBoard ? i : Object.assign({}, i, { boardId: fallbackBoard })))
+      .filter((i) => boardIds[i.boardId])
+      .map((i) => vbItemToRow(i, uid));
     return syncTable('vision_boards', boardRows, uid).then(() => syncTable('vision_board_items', itemRows, uid));
   }
 

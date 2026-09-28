@@ -73,6 +73,26 @@ exports.handler = async (event) => {
     const user = await whoami.json();
     if (!user || !user.id) return json(401, { error: 'Invalid session.' }, cors);
 
+    // Storage files aren't covered by the database's "on delete cascade" —
+    // remove this user's Vision Board photos first. Best effort: a failure
+    // here is logged but never blocks deleting the account itself.
+    try {
+      const adminHeaders = { apikey: serviceKey, Authorization: 'Bearer ' + serviceKey, 'Content-Type': 'application/json' };
+      const listRes = await fetch(SUPABASE_URL + '/storage/v1/object/list/vision-board', {
+        method: 'POST', headers: adminHeaders,
+        body: JSON.stringify({ prefix: user.id + '/', limit: 1000, offset: 0 })
+      });
+      const files = listRes.ok ? await listRes.json() : [];
+      const paths = (Array.isArray(files) ? files : []).map((f) => user.id + '/' + f.name);
+      if (paths.length) {
+        await fetch(SUPABASE_URL + '/storage/v1/object/vision-board', {
+          method: 'DELETE', headers: adminHeaders, body: JSON.stringify({ prefixes: paths })
+        });
+      }
+    } catch (err) {
+      console.error('[delete-account] storage cleanup failed', err && err.message);
+    }
+
     const deleteRes = await fetch(SUPABASE_URL + '/auth/v1/admin/users/' + user.id, {
       method: 'DELETE',
       headers: { apikey: serviceKey, Authorization: 'Bearer ' + serviceKey }
