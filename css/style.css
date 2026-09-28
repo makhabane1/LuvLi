@@ -1264,6 +1264,9 @@ html[data-theme="dusk"] .day-alert.is-warn { background: #3B2C1F; border-color: 
 .subject-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
 .progress-line { display: flex; justify-content: space-between; font-size: 12.5px; font-weight: 700; color: var(--muted); margin-bottom: 6px; letter-spacing: .02em; }
 
+.plan-session { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; font-size: 13px; color: var(--ink); }
+.plan-session.is-done .plan-session-label { text-decoration: line-through; opacity: .6; }
+
 .history-item {
   display: flex; align-items: center; gap: 12px;
   padding: 12px 14px; border-radius: var(--r-sm);

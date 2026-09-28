@@ -38,6 +38,7 @@ const SupabaseSync = (() => {
   let lastExamsJSON = null;
   let lastStudyNotesJSON = null;
   let lastCardsJSON = null;
+  let lastPlansJSON = null;
   let syncing = false;
   let pendingAgain = false;
 
@@ -244,6 +245,19 @@ const SupabaseSync = (() => {
       id: row.id, subjectId: row.subject_id || '', question: row.question, answer: row.answer || '',
       confidence: row.confidence, seen: row.seen, right: row.right, lastSeen: row.last_seen,
       createdAt: row.created_at
+    };
+  }
+
+  function planToRow(plan, uid) {
+    return {
+      id: plan.id, user_id: uid, exam_id: plan.examId || null, subject_id: plan.subjectId || null,
+      name: plan.name, sessions: plan.sessions || []
+    };
+  }
+  function rowToPlan(row) {
+    return {
+      id: row.id, examId: row.exam_id || '', subjectId: row.subject_id || '', name: row.name,
+      sessions: row.sessions || [], createdAt: row.created_at
     };
   }
 
@@ -468,6 +482,7 @@ const SupabaseSync = (() => {
   function pushExams(items, uid) { return syncTable('exams', items.map((e) => examToRow(e, uid)), uid); }
   function pushStudyNotes(items, uid) { return syncTable('study_notes', items.map((n) => studyNoteToRow(n, uid)), uid); }
   function pushCards(items, uid) { return syncTable('flashcards', items.map((c) => cardToRow(c, uid)), uid); }
+  function pushPlans(items, uid) { return syncTable('revision_plans', items.map((p) => planToRow(p, uid)), uid); }
 
   // Boards must sync before items: vision_board_items.board_id is a real FK
   // to vision_boards.id, so inserting an item before its board exists (or
@@ -528,6 +543,7 @@ const SupabaseSync = (() => {
     const examsJSON = JSON.stringify((state.student && state.student.exams) || []);
     const studyNotesJSON = JSON.stringify((state.student && state.student.notes) || []);
     const cardsJSON = JSON.stringify((state.student && state.student.cards) || []);
+    const plansJSON = JSON.stringify((state.student && state.student.plans) || []);
     const tasksChanged = tasksJSON !== lastTasksJSON;
     const backlogChanged = backlogJSON !== lastBacklogJSON;
     const settingsChanged = settingsJSON !== lastSettingsJSON;
@@ -543,10 +559,11 @@ const SupabaseSync = (() => {
     const examsChanged = examsJSON !== lastExamsJSON;
     const studyNotesChanged = studyNotesJSON !== lastStudyNotesJSON;
     const cardsChanged = cardsJSON !== lastCardsJSON;
+    const plansChanged = plansJSON !== lastPlansJSON;
     if (!tasksChanged && !backlogChanged && !settingsChanged && !profileChanged
       && !sessionsChanged && !checkInsChanged && !nightReviewsChanged
       && !subjectsChanged && !personalityChanged && !affirmationsChanged && !visionBoardChanged
-      && !assignmentsChanged && !examsChanged && !studyNotesChanged && !cardsChanged) return;
+      && !assignmentsChanged && !examsChanged && !studyNotesChanged && !cardsChanged && !plansChanged) return;
 
     if (syncing) { pendingAgain = true; return; }
     syncing = true;
@@ -567,6 +584,7 @@ const SupabaseSync = (() => {
     if (examsChanged) jobs.push(pushExams((state.student && state.student.exams) || [], uid).then(() => { lastExamsJSON = examsJSON; }));
     if (studyNotesChanged) jobs.push(pushStudyNotes((state.student && state.student.notes) || [], uid).then(() => { lastStudyNotesJSON = studyNotesJSON; }));
     if (cardsChanged) jobs.push(pushCards((state.student && state.student.cards) || [], uid).then(() => { lastCardsJSON = cardsJSON; }));
+    if (plansChanged) jobs.push(pushPlans((state.student && state.student.plans) || [], uid).then(() => { lastPlansJSON = plansJSON; }));
 
     Promise.all(jobs).catch((err) => {
       console.error('Luvli: could not sync to Supabase', err);
@@ -606,9 +624,10 @@ const SupabaseSync = (() => {
       client().from('assignments').select('*').eq('user_id', uid),
       client().from('exams').select('*').eq('user_id', uid),
       client().from('study_notes').select('*').eq('user_id', uid),
-      client().from('flashcards').select('*').eq('user_id', uid)
+      client().from('flashcards').select('*').eq('user_id', uid),
+      client().from('revision_plans').select('*').eq('user_id', uid)
     ]).then(([tasksRes, backlogRes, settingsRes, profileRes, sessionsRes, checkInsRes, nightReviewsRes,
-      subjectsRes, personalityRes, affirmationsRes, vbBoardsRes, vbItemsRes, assignmentsRes, examsRes, studyNotesRes, cardsRes]) => {
+      subjectsRes, personalityRes, affirmationsRes, vbBoardsRes, vbItemsRes, assignmentsRes, examsRes, studyNotesRes, cardsRes, plansRes]) => {
       if (tasksRes.error) throw tasksRes.error;
       if (backlogRes.error) throw backlogRes.error;
       if (settingsRes.error) throw settingsRes.error;
@@ -625,6 +644,7 @@ const SupabaseSync = (() => {
       if (examsRes.error) throw examsRes.error;
       if (studyNotesRes.error) throw studyNotesRes.error;
       if (cardsRes.error) throw cardsRes.error;
+      if (plansRes.error) throw plansRes.error;
 
       const cloudTasks = tasksRes.data.map(rowToTask);
       const cloudBacklog = backlogRes.data.map(rowToBacklog);
@@ -810,6 +830,16 @@ const SupabaseSync = (() => {
       } else {
         Storage.update((draft) => { draft.student.cards = cloudCards; }, 'supabase-pull', { undo: false });
         lastCardsJSON = JSON.stringify(cloudCards);
+      }
+
+      const cloudPlans = plansRes.data.map(rowToPlan);
+      const localPlans = (state.student && state.student.plans) || [];
+      if (!cloudPlans.length && localPlans.length) {
+        lastPlansJSON = JSON.stringify([]);
+        pushJobs.push(pushPlans(localPlans, uid).then(() => { lastPlansJSON = JSON.stringify(localPlans); }));
+      } else {
+        Storage.update((draft) => { draft.student.plans = cloudPlans; }, 'supabase-pull', { undo: false });
+        lastPlansJSON = JSON.stringify(cloudPlans);
       }
 
       return Promise.all(pushJobs).then(() => {});

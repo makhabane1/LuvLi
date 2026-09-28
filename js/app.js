@@ -938,6 +938,7 @@ const App = (() => {
  renderExams(s);
  renderStudyNotes(s);
  renderFlashcards(s);
+ renderRevisionPlans(s);
  }
 
  function renderSubjects(s) {
@@ -2974,6 +2975,138 @@ const App = (() => {
  renderReviewModal();
  }
 
+ /* ==================== Revision plans (Student mode, stage 4) ==================== */
+
+ /** One session per topic if the exam has any, otherwise a few generic passes — spaced evenly before the exam date. */
+ function generatePlanSessions(exam) {
+ const today = Utils.todayKey();
+ const daysUntil = Math.max(1, Utils.dayDiff(today, exam.examDate || today));
+ const topics = (exam.topics || []).slice(0, 6);
+ const labels = topics.length ? topics.map((t) => 'Review: ' + t) : ['First pass', 'Practice questions', 'Final review'];
+ const count = labels.length;
+ return labels.map((label, i) => {
+ const offset = Utils.clamp(Math.round(((i + 1) / (count + 1)) * daysUntil), 0, daysUntil - 1);
+ return { id: Utils.uid('rps'), label: label, date: Utils.addDays(today, offset), done: false };
+ });
+ }
+
+ function renderRevisionPlans(s) {
+ const plans = (s.student && s.student.plans) || [];
+
+ if (!plans.length) {
+ setHtml('revisionPlanList',
+ '<div class="empty-state"><span class="empty-ico">' + ico('calendar-check') + '</span><strong>No revision plans yet</strong>' +
+ '<p>Add an exam with a date, then build a plan for it.</p></div>');
+ return;
+ }
+
+ setHtml('revisionPlanList', plans.map((plan) => {
+ const total = plan.sessions.length;
+ const done = plan.sessions.filter((sess) => sess.done).length;
+ const percent = total ? Math.round((done / total) * 100) : 0;
+ return '<div class="subject-card" data-id="' + plan.id + '">' +
+ '<div class="subject-top">' +
+ '<span class="subject-emoji">' + ico('calendar-check') + '</span>' +
+ '<span class="subject-name">' + esc(plan.name) + '</span>' +
+ '<span class="chip chip-soft">' + done + '/' + total + '</span>' +
+ '</div>' +
+ '<div class="progress-line"><span>Progress</span><span>' + percent + '%</span></div>' +
+ '<div class="bar"><div class="bar-fill" style="width:' + percent + '%"></div></div>' +
+ '<div class="subject-next mt-12">' +
+ plan.sessions.map((sess) =>
+ '<label class="plan-session' + (sess.done ? ' is-done' : '') + '">' +
+ '<input type="checkbox" data-action="plan-session-toggle" data-id="' + plan.id + '" data-session="' + sess.id + '"' +
+ (sess.done ? ' checked' : '') + ' />' +
+ '<span class="plan-session-label">' + esc(sess.label) +
+ (sess.date ? ' — ' + esc(Utils.relativeDateLabel(sess.date)) : '') + '</span>' +
+ '</label>'
+ ).join('') +
+ '</div>' +
+ '<div class="subject-actions">' +
+ '<button class="btn btn-danger btn-small" type="button" data-action="plan-delete" data-id="' + plan.id + '">Delete plan</button>' +
+ '</div></div>';
+ }).join(''));
+ }
+
+ function openBuildPlanModal() {
+ const s = state();
+ const today = Utils.todayKey();
+ const exams = (s.student.exams || []).filter((exam) => exam.examDate && exam.examDate >= today)
+ .sort((a, b) => (a.examDate < b.examDate ? -1 : 1));
+
+ if (!exams.length) {
+ UI.modal({
+ title: 'No upcoming exams yet',
+ bodyHtml: '<p class="card-note">Add an exam with a date first, then Luvli can build a revision plan for it.</p>',
+ actions: [{ label: 'Close', action: 'modal-cancel', variant: 'primary' }]
+ });
+ return;
+ }
+
+ UI.modal({
+ title: 'Build My Revision Plan',
+ sub: 'Pick the exam and Luvli will lay out a few sessions between now and then.',
+ bodyHtml:
+ '<label class="field"><span class="field-label">Exam</span><select class="input" id="planExam">' +
+ exams.map((exam) => '<option value="' + exam.id + '">' + esc(exam.name) + ' · ' +
+ esc(Utils.relativeDateLabel(exam.examDate)) + '</option>').join('') +
+ '</select></label>',
+ actions: [
+ { label: 'Cancel', action: 'modal-cancel', variant: 'ghost' },
+ { label: 'Build my plan', action: 'plan-build', variant: 'primary' }
+ ]
+ });
+ }
+
+ function buildRevisionPlan() {
+ const examId = ($('planExam') || {}).value || '';
+ const exam = (state().student.exams || []).find((e) => e.id === examId);
+ if (!exam) { UI.closeModal(); return; }
+
+ Storage.update((draft) => {
+ draft.student.plans.push({
+ id: Utils.uid('plan'), examId: exam.id, subjectId: exam.subjectId || '',
+ name: exam.name + ' revision plan', sessions: generatePlanSessions(exam),
+ createdAt: new Date().toISOString()
+ });
+ }, 'student-plan');
+
+ UI.closeModal();
+ UI.toast({ icon: 'sparkles', title: 'Plan ready ♡', body: 'A few sessions between now and ' + exam.name + '.' });
+ }
+
+ function togglePlanSession(planId, sessionId) {
+ Storage.update((draft) => {
+ const plan = draft.student.plans.find((p) => p.id === planId);
+ const session = plan && plan.sessions.find((sess) => sess.id === sessionId);
+ if (session) session.done = !session.done;
+ }, 'student-plan');
+ }
+
+ function deletePlan(id) {
+ const plan = (state().student.plans || []).find((p) => p.id === id);
+ if (!plan) return;
+ confirmTarget = { kind: 'plan', id: plan.id };
+ UI.confirm({
+ title: 'Delete this revision plan?',
+ sub: '"' + plan.name + '" and its checklist will be removed.',
+ confirmLabel: 'Delete it',
+ confirmAction: 'plan-delete-confirm',
+ variant: 'danger'
+ });
+ }
+
+ function confirmDeletePlan() {
+ const target = confirmTarget && confirmTarget.kind === 'plan' ? confirmTarget.id : '';
+ confirmTarget = null;
+ UI.closeModal();
+ if (!target) return;
+ Storage.update((draft) => {
+ draft.student.plans = draft.student.plans.filter((p) => p.id !== target);
+ }, 'student-plan');
+ UI.toast({ icon: 'trash', title: 'Plan deleted' });
+ }
+
  /** Log study you did away from Luvli. */
  function openLogSessionModal(subjectId) {
  const s = state();
@@ -3590,6 +3723,11 @@ const App = (() => {
  case 'card-delete-confirm': confirmDeleteCard(); break;
  case 'review-reveal':  revealReviewAnswer(); break;
  case 'review-answer':  answerReviewCard(target.getAttribute('data-right') === '1'); break;
+
+ case 'plan-build':  buildRevisionPlan(); break;
+ case 'plan-session-toggle': togglePlanSession(id, target.getAttribute('data-session') || ''); break;
+ case 'plan-delete':  deletePlan(id); break;
+ case 'plan-delete-confirm': confirmDeletePlan(); break;
  case 'session-delete':  deleteSession(id); break;
  case 'log-save':  saveLoggedSession(); break;
 
@@ -3810,6 +3948,7 @@ const App = (() => {
  on('addStudyNoteBtn', () => openStudyNoteModal(null));
  on('addCardBtn', () => openCardModal(null));
  on('reviewCardsBtn', () => openReviewModal());
+ on('buildRevisionPlanBtn', () => openBuildPlanModal());
 
  // Affirmations
  on('afShuffleBtn', (event) => shuffleAffirmation(event));
