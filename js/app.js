@@ -936,6 +936,7 @@ const App = (() => {
  renderStudyHistory(s);
  renderAssignments(s);
  renderExams(s);
+ renderStudyNotes(s);
  }
 
  function renderSubjects(s) {
@@ -2662,6 +2663,131 @@ const App = (() => {
  UI.toast({ icon: 'trash', title: 'Exam deleted' });
  }
 
+ /* ==================== Study notes (Student mode, stage 2) ==================== */
+
+ function renderStudyNotes(s) {
+ const items = ((s.student && s.student.notes) || []).slice()
+ .sort((a, b) => (b.pinned - a.pinned) || ((b.updatedAt || '') < (a.updatedAt || '') ? -1 : 1));
+
+ if (!items.length) {
+ setHtml('studyNoteList',
+ '<div class="empty-state"><span class="empty-ico">' + ico('book') + '</span><strong>No notes yet</strong>' +
+ '<p>Save a quick note or a link somewhere you will find it again.</p>' +
+ '<button class="btn btn-primary" type="button" data-action="add-study-note">+ Add note</button></div>');
+ return;
+ }
+
+ setHtml('studyNoteList', items.map((note) => {
+ const subject = (s.subjects || []).find((sub) => sub.id === note.subjectId);
+ return '<div class="subject-card" data-id="' + note.id + '">' +
+ '<div class="subject-top">' +
+ '<span class="subject-emoji">' + (note.url ? ico('link') : (subject ? esc(subject.emoji) : ico('book'))) + '</span>' +
+ '<span class="subject-name">' + esc(note.title) + '</span>' +
+ (note.pinned ? '<span class="chip chip-done">Pinned</span>' : '') +
+ '</div>' +
+ (subject ? '<div class="subject-goal">' + esc(subject.name) + '</div>' : '') +
+ (note.body ? '<div class="subject-next mt-12">' + esc(note.body) + '</div>' : '') +
+ (note.url ? '<div class="subject-next mt-12"><a href="' + esc(note.url) + '" target="_blank" rel="noopener noreferrer">' + esc(note.url) + '</a></div>' : '') +
+ '<div class="subject-actions">' +
+ '<button class="btn btn-soft btn-small" type="button" data-action="study-note-pin" data-id="' + note.id + '">' +
+ (note.pinned ? 'Unpin' : 'Pin') + '</button>' +
+ '<button class="btn btn-ghost btn-small" type="button" data-action="study-note-edit" data-id="' + note.id + '">Edit</button>' +
+ '<button class="btn btn-danger btn-small" type="button" data-action="study-note-delete" data-id="' + note.id + '">Delete</button>' +
+ '</div></div>';
+ }).join(''));
+ }
+
+ function openStudyNoteModal(id) {
+ const s = state();
+ const note = id ? (s.student.notes || []).find((n) => n.id === id) : null;
+ const subjects = s.subjects || [];
+
+ UI.modal({
+ title: note ? 'Edit note' : 'New study note',
+ sub: 'A thought, a summary, or a link worth keeping close.',
+ bodyHtml:
+ '<label class="field"><span class="field-label">Title</span>' +
+ '<input class="input" id="noteTitle" type="text" placeholder="e.g. Functions — the basics" value="' + esc(note ? note.title : '') + '" /></label>' +
+ '<label class="field"><span class="field-label">Subject</span><select class="input" id="noteSubject">' +
+ '<option value="">No subject</option>' +
+ subjects.map((sub) => '<option value="' + sub.id + '"' + (note && note.subjectId === sub.id ? ' selected' : '') + '>' +
+ esc(sub.emoji + ' ' + sub.name) + '</option>').join('') +
+ '</select></label>' +
+ '<label class="field"><span class="field-label">Note</span>' +
+ '<textarea class="input" id="noteBody" rows="3">' + esc(note ? note.body || '' : '') + '</textarea></label>' +
+ '<label class="field"><span class="field-label">Link (optional)</span>' +
+ '<input class="input" id="noteUrl" type="url" placeholder="https://…" value="' + esc(note ? note.url || '' : '') + '" /></label>',
+ actions: (note ? [{ label: 'Delete', action: 'study-note-delete', variant: 'danger', attrs: 'data-id="' + note.id + '"' }] : [])
+ .concat([
+ { label: 'Cancel', action: 'modal-cancel', variant: 'ghost' },
+ { label: note ? 'Save' : 'Add note', action: 'study-note-save', variant: 'primary',
+ attrs: 'data-id="' + (note ? note.id : '') + '"' }
+ ])
+ });
+ }
+
+ function saveStudyNote(id) {
+ const titleInput = $('noteTitle');
+ const title = titleInput ? titleInput.value.trim() : '';
+ if (!title) {
+ UI.toast({ icon: 'book', title: 'Give it a title first, luv', body: 'Even a few words is enough.' });
+ if (titleInput) titleInput.focus();
+ return;
+ }
+
+ Storage.update((draft) => {
+ const existing = id ? draft.student.notes.find((n) => n.id === id) : null;
+ const subjectId = ($('noteSubject') || {}).value || '';
+ const body = (($('noteBody') || {}).value || '').trim();
+ const url = (($('noteUrl') || {}).value || '').trim();
+ const now = new Date().toISOString();
+
+ if (existing) {
+ existing.title = title; existing.subjectId = subjectId; existing.body = body;
+ existing.url = url; existing.updatedAt = now;
+ } else {
+ draft.student.notes.push({
+ id: Utils.uid('note'), title: title, subjectId: subjectId, body: body,
+ kind: url ? 'link' : 'note', url: url, pinned: false, createdAt: now, updatedAt: now
+ });
+ }
+ }, 'student-note');
+
+ UI.closeModal();
+ UI.toast({ icon: 'book', title: id ? 'Note updated' : 'Note saved', body: title });
+ }
+
+ function toggleStudyNotePin(id) {
+ Storage.update((draft) => {
+ const note = draft.student.notes.find((n) => n.id === id);
+ if (note) { note.pinned = !note.pinned; note.updatedAt = new Date().toISOString(); }
+ }, 'student-note');
+ }
+
+ function deleteStudyNote(id) {
+ const note = (state().student.notes || []).find((n) => n.id === id);
+ if (!note) return;
+ confirmTarget = { kind: 'study-note', id: note.id };
+ UI.confirm({
+ title: 'Delete this note?',
+ sub: '"' + note.title + '" will be removed.',
+ confirmLabel: 'Delete it',
+ confirmAction: 'study-note-delete-confirm',
+ variant: 'danger'
+ });
+ }
+
+ function confirmDeleteStudyNote() {
+ const target = confirmTarget && confirmTarget.kind === 'study-note' ? confirmTarget.id : '';
+ confirmTarget = null;
+ UI.closeModal();
+ if (!target) return;
+ Storage.update((draft) => {
+ draft.student.notes = draft.student.notes.filter((n) => n.id !== target);
+ }, 'student-note');
+ UI.toast({ icon: 'trash', title: 'Note deleted' });
+ }
+
  /** Log study you did away from Luvli. */
  function openLogSessionModal(subjectId) {
  const s = state();
@@ -3263,6 +3389,13 @@ const App = (() => {
  case 'exam-save':  saveExam(id); break;
  case 'exam-delete':  deleteExam(id); break;
  case 'exam-delete-confirm': confirmDeleteExam(); break;
+
+ case 'add-study-note':  UI.closeModal(); openStudyNoteModal(null); break;
+ case 'study-note-edit':  openStudyNoteModal(id); break;
+ case 'study-note-save':  saveStudyNote(id); break;
+ case 'study-note-pin':  toggleStudyNotePin(id); break;
+ case 'study-note-delete':  deleteStudyNote(id); break;
+ case 'study-note-delete-confirm': confirmDeleteStudyNote(); break;
  case 'session-delete':  deleteSession(id); break;
  case 'log-save':  saveLoggedSession(); break;
 
@@ -3480,6 +3613,7 @@ const App = (() => {
  on('addSubjectBtn', () => openSubjectModal(null));
  on('addAssignmentBtn', () => openAssignmentModal(null));
  on('addExamBtn', () => openExamModal(null));
+ on('addStudyNoteBtn', () => openStudyNoteModal(null));
 
  // Affirmations
  on('afShuffleBtn', (event) => shuffleAffirmation(event));
