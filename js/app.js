@@ -3266,8 +3266,8 @@ const App = (() => {
    setText('authAccountEmail', account ? account.email : '');
    const prefs = Auth.preferences();
    setText('authAccountNote', prefs.completed
-     ? 'Your account and your day live in this browser — no server, nothing sent anywhere.'
-     : 'Your account lives in this browser. Finish onboarding to personalise Luvli.');
+     ? 'Your account and your day are stored securely and sync across your devices — only you can see them.'
+     : 'Your account is ready. Finish onboarding to personalise Luvli.');
  }
 
  /** Sign out gently, with a way back in. */
