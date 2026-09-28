@@ -33,6 +33,7 @@ const SupabaseSync = (() => {
   let lastSubjectsJSON = null;
   let lastPersonalityJSON = null;
   let lastAffirmationsJSON = null;
+  let lastVisionBoardJSON = null;
   let syncing = false;
   let pendingAgain = false;
 
@@ -305,6 +306,31 @@ const SupabaseSync = (() => {
     };
   }
 
+  // state.visionboard is an ad hoc key (storage.js's defaults() never
+  // declares it — js/vision-board.js attaches it on first read) shaped
+  // { boards: [{id,name,emoji,createdAt}], items: [{id,boardId,url,note,
+  // source,size,createdAt}] }. Local createdAt is a Date.now() number, not
+  // an ISO string like the rest of the app — not worth preserving exactly,
+  // so pushes omit it (DB default now()) and pulls read the DB's timestamp.
+  function boardToRow(board, uid) {
+    return { id: board.id, user_id: uid, name: board.name, emoji: board.emoji || '✨' };
+  }
+  function rowToBoard(row) {
+    return { id: row.id, name: row.name, emoji: row.emoji, createdAt: new Date(row.created_at).getTime() };
+  }
+  function vbItemToRow(item, uid) {
+    return {
+      id: item.id, user_id: uid, board_id: item.boardId, url: item.url,
+      note: item.note || '', source: item.source || 'manual', size: item.size || ''
+    };
+  }
+  function rowToVbItem(row) {
+    return {
+      id: row.id, boardId: row.board_id, url: row.url, note: row.note || '',
+      source: row.source || 'manual', size: row.size || '', createdAt: new Date(row.created_at).getTime()
+    };
+  }
+
   const MOODS = ['great', 'good', 'okay', 'low', 'difficult', 'exhausted'];
 
   function checkInsToRows(checkIns, uid) {
@@ -376,6 +402,15 @@ const SupabaseSync = (() => {
 
   function pushSubjects(subjects, uid) { return syncTable('subjects', subjects.map((s) => subjectToRow(s, uid)), uid); }
 
+  // Boards must sync before items: vision_board_items.board_id is a real FK
+  // to vision_boards.id, so inserting an item before its board exists (or
+  // pruning a board while its items still reference it) would fail.
+  function pushVisionBoard(vb, uid) {
+    const boardRows = (vb.boards || []).map((b) => boardToRow(b, uid));
+    const itemRows = (vb.items || []).map((i) => vbItemToRow(i, uid));
+    return syncTable('vision_boards', boardRows, uid).then(() => syncTable('vision_board_items', itemRows, uid));
+  }
+
   function pushPersonality(state, uid) {
     return client().from('personality').upsert([personalityToRow(state, uid)], { onConflict: 'user_id' })
       .then(({ error }) => { if (error) throw error; });
@@ -421,6 +456,7 @@ const SupabaseSync = (() => {
     const subjectsJSON = JSON.stringify(state.subjects);
     const personalityJSON = JSON.stringify(personalityToRow(state, uid));
     const affirmationsJSON = JSON.stringify(state.affirmations);
+    const visionBoardJSON = JSON.stringify(state.visionboard || { boards: [], items: [] });
     const tasksChanged = tasksJSON !== lastTasksJSON;
     const backlogChanged = backlogJSON !== lastBacklogJSON;
     const settingsChanged = settingsJSON !== lastSettingsJSON;
@@ -431,9 +467,10 @@ const SupabaseSync = (() => {
     const subjectsChanged = subjectsJSON !== lastSubjectsJSON;
     const personalityChanged = personalityJSON !== lastPersonalityJSON;
     const affirmationsChanged = affirmationsJSON !== lastAffirmationsJSON;
+    const visionBoardChanged = visionBoardJSON !== lastVisionBoardJSON;
     if (!tasksChanged && !backlogChanged && !settingsChanged && !profileChanged
       && !sessionsChanged && !checkInsChanged && !nightReviewsChanged
-      && !subjectsChanged && !personalityChanged && !affirmationsChanged) return;
+      && !subjectsChanged && !personalityChanged && !affirmationsChanged && !visionBoardChanged) return;
 
     if (syncing) { pendingAgain = true; return; }
     syncing = true;
@@ -449,6 +486,7 @@ const SupabaseSync = (() => {
     if (subjectsChanged) jobs.push(pushSubjects(state.subjects, uid).then(() => { lastSubjectsJSON = subjectsJSON; }));
     if (personalityChanged) jobs.push(pushPersonality(state, uid).then(() => { lastPersonalityJSON = personalityJSON; }));
     if (affirmationsChanged) jobs.push(pushAffirmations(state.affirmations, uid).then(() => { lastAffirmationsJSON = affirmationsJSON; }));
+    if (visionBoardChanged) jobs.push(pushVisionBoard(state.visionboard || { boards: [], items: [] }, uid).then(() => { lastVisionBoardJSON = visionBoardJSON; }));
 
     Promise.all(jobs).catch((err) => {
       console.error('Luvli: could not sync to Supabase', err);
@@ -482,9 +520,11 @@ const SupabaseSync = (() => {
       client().from('night_reviews').select('*').eq('user_id', uid),
       client().from('subjects').select('*').eq('user_id', uid),
       client().from('personality').select('*').eq('user_id', uid).maybeSingle(),
-      client().from('affirmations').select('*').eq('user_id', uid)
+      client().from('affirmations').select('*').eq('user_id', uid),
+      client().from('vision_boards').select('*').eq('user_id', uid),
+      client().from('vision_board_items').select('*').eq('user_id', uid)
     ]).then(([tasksRes, backlogRes, settingsRes, profileRes, sessionsRes, checkInsRes, nightReviewsRes,
-      subjectsRes, personalityRes, affirmationsRes]) => {
+      subjectsRes, personalityRes, affirmationsRes, vbBoardsRes, vbItemsRes]) => {
       if (tasksRes.error) throw tasksRes.error;
       if (backlogRes.error) throw backlogRes.error;
       if (settingsRes.error) throw settingsRes.error;
@@ -495,6 +535,8 @@ const SupabaseSync = (() => {
       if (subjectsRes.error) throw subjectsRes.error;
       if (personalityRes.error) throw personalityRes.error;
       if (affirmationsRes.error) throw affirmationsRes.error;
+      if (vbBoardsRes.error) throw vbBoardsRes.error;
+      if (vbItemsRes.error) throw vbItemsRes.error;
 
       const cloudTasks = tasksRes.data.map(rowToTask);
       const cloudBacklog = backlogRes.data.map(rowToBacklog);
@@ -624,6 +666,21 @@ const SupabaseSync = (() => {
         lastAffirmationsJSON = JSON.stringify(cloudAffirmations);
       }
 
+      // Vision Board: same empty-cloud-vs-local-has-data direction check as
+      // tasks/backlog. Boards have no delete UI, but the array-diff approach
+      // still works fine for the append-only-in-practice case.
+      const cloudVb = { boards: vbBoardsRes.data.map(rowToBoard), items: vbItemsRes.data.map(rowToVbItem) };
+      const localVb = state.visionboard || { boards: [], items: [] };
+      const localHasVb = (localVb.boards && localVb.boards.length) || (localVb.items && localVb.items.length);
+      const cloudVbEmpty = !cloudVb.boards.length && !cloudVb.items.length;
+      if (cloudVbEmpty && localHasVb) {
+        lastVisionBoardJSON = JSON.stringify({ boards: [], items: [] });
+        pushJobs.push(pushVisionBoard(localVb, uid).then(() => { lastVisionBoardJSON = JSON.stringify(localVb); }));
+      } else {
+        Storage.update((draft) => { draft.visionboard = cloudVb; }, 'supabase-pull', { undo: false });
+        lastVisionBoardJSON = JSON.stringify(cloudVb);
+      }
+
       return Promise.all(pushJobs).then(() => {});
     });
   }
@@ -633,10 +690,10 @@ const SupabaseSync = (() => {
   let started = false;
 
   function init() {
-    if (started || !isRealProvider() || !userId()) return;
+    if (started || !isRealProvider() || !userId()) return Promise.resolve();
     started = true;
 
-    pull().then(() => {
+    return pull().then(() => {
       Storage.subscribe((state, reason) => {
         if (reason === 'supabase-pull') return; // don't push what we just pulled
         maybeSync();

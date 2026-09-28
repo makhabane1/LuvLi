@@ -69,7 +69,17 @@ const VisionBoard = (() => {
     }
     return s[K];
   }
-  function save(vb) { const s = Storage.get(); s[K] = vb; Storage.save(); }
+  function save(vb) {
+    const s = Storage.get();
+    s[K] = vb;
+    Storage.save();
+    // Storage.save() alone doesn't notify subscribers — only Storage.update()
+    // does that normally. Vision Board bypasses update() (it mutates its own
+    // object directly rather than through a mutator callback), so it emits
+    // explicitly here. This is what lets js/data-sync-supabase.js's
+    // Storage.subscribe() listener notice vision board changes at all.
+    if (typeof Storage.emit === 'function') Storage.emit('visionboard');
+  }
   function render() { renderBoards(); renderGrid(); renderCounts(); }
 
   function renderBoards() {
@@ -278,7 +288,16 @@ const VisionBoard = (() => {
   }
 
   function init() { const vb = get(); if (vb.boards.length && !active) active = vb.boards[0].id; bind(); render(); }
-  return { init };
+  return { init, render };
 })();
 
-document.addEventListener('DOMContentLoaded', () => VisionBoard.init());
+document.addEventListener('DOMContentLoaded', () => {
+  VisionBoard.init();
+  // A real backend's data arrives asynchronously (see js/data-sync-supabase.js) —
+  // once the initial pull replaces state.visionboard, repaint with it.
+  // Auth.ready() resolves instantly for the local provider, so this is a
+  // no-op there.
+  if (typeof Auth !== 'undefined' && typeof SupabaseSync !== 'undefined') {
+    Auth.ready().then(() => SupabaseSync.init()).then(() => VisionBoard.render());
+  }
+});
