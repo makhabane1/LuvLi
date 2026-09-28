@@ -934,6 +934,8 @@ const App = (() => {
  setHtml('studyStats', Progress.renderStudyStats(s));
  renderSubjects(s);
  renderStudyHistory(s);
+ renderAssignments(s);
+ renderExams(s);
  }
 
  function renderSubjects(s) {
@@ -2385,6 +2387,281 @@ const App = (() => {
  });
  }
 
+ /* ==================== Assignments (Student mode, stage 1) ==================== */
+
+ function renderAssignments(s) {
+ const items = ((s.student && s.student.assignments) || []).slice()
+ .sort((a, b) => (a.status === 'done') - (b.status === 'done') || (a.dueDate || '9999') < (b.dueDate || '9999') ? -1 : 1);
+
+ if (!items.length) {
+ setHtml('assignmentList',
+ '<div class="empty-state"><span class="empty-ico">' + ico('check') + '</span><strong>No assignments yet</strong>' +
+ '<p>Add what is due and Luvli will keep it in view.</p>' +
+ '<button class="btn btn-primary" type="button" data-action="add-assignment">+ Add assignment</button></div>');
+ return;
+ }
+
+ setHtml('assignmentList', items.map((a) => {
+ const subject = (s.subjects || []).find((sub) => sub.id === a.subjectId);
+ const done = a.status === 'done';
+ return '<div class="subject-card" data-id="' + a.id + '">' +
+ '<div class="subject-top">' +
+ '<span class="subject-emoji">' + (subject ? esc(subject.emoji) : ico('book')) + '</span>' +
+ '<span class="subject-name">' + esc(a.name) + '</span>' +
+ (done ? '<span class="chip chip-done">Done</span>' : '<span class="chip chip-soft">' + esc(a.difficulty || 'medium') + '</span>') +
+ '</div>' +
+ '<div class="subject-goal">' +
+ (a.dueDate ? 'Due ' + esc(Utils.relativeDateLabel(a.dueDate)) : 'No due date') +
+ (subject ? ' · ' + esc(subject.name) : '') +
+ '</div>' +
+ (a.notes ? '<div class="subject-next mt-12">' + esc(a.notes) + '</div>' : '') +
+ '<div class="subject-actions">' +
+ (done ? '' : '<button class="btn btn-primary btn-small" type="button" data-action="assignment-done" data-id="' + a.id + '">Mark done</button>') +
+ '<button class="btn btn-ghost btn-small" type="button" data-action="assignment-edit" data-id="' + a.id + '">Edit</button>' +
+ '<button class="btn btn-danger btn-small" type="button" data-action="assignment-delete" data-id="' + a.id + '">Delete</button>' +
+ '</div></div>';
+ }).join(''));
+ }
+
+ function openAssignmentModal(id) {
+ const s = state();
+ const item = id ? (s.student.assignments || []).find((a) => a.id === id) : null;
+ const subjects = s.subjects || [];
+
+ UI.modal({
+ title: item ? 'Edit assignment' : 'New assignment',
+ sub: 'Keep what is due somewhere Luvli can see it.',
+ bodyHtml:
+ '<label class="field"><span class="field-label">Assignment</span>' +
+ '<input class="input" id="asgName" type="text" placeholder="e.g. Functions worksheet" value="' + esc(item ? item.name : '') + '" /></label>' +
+ '<div class="field-row">' +
+ '<label class="field"><span class="field-label">Subject</span><select class="input" id="asgSubject">' +
+ '<option value="">No subject</option>' +
+ subjects.map((sub) => '<option value="' + sub.id + '"' + (item && item.subjectId === sub.id ? ' selected' : '') + '>' +
+ esc(sub.emoji + ' ' + sub.name) + '</option>').join('') +
+ '</select></label>' +
+ '<label class="field"><span class="field-label">Due date</span>' +
+ '<input class="input" id="asgDue" type="date" value="' + esc(item ? item.dueDate || '' : '') + '" /></label>' +
+ '</div>' +
+ '<div class="field-row">' +
+ '<label class="field"><span class="field-label">Difficulty</span><select class="input" id="asgDifficulty">' +
+ ['easy', 'medium', 'hard'].map((d) => '<option value="' + d + '"' +
+ ((item ? item.difficulty === d : d === 'medium') ? ' selected' : '') + '>' +
+ d.charAt(0).toUpperCase() + d.slice(1) + '</option>').join('') +
+ '</select></label>' +
+ '<label class="field"><span class="field-label">Estimate (minutes)</span>' +
+ '<input class="input" id="asgEstimate" type="number" min="5" step="5" value="' +
+ (item && item.estimateMinutes ? item.estimateMinutes : '') + '" /></label>' +
+ '</div>' +
+ '<label class="field"><span class="field-label">Notes</span>' +
+ '<textarea class="input" id="asgNotes" rows="2">' + esc(item ? item.notes || '' : '') + '</textarea></label>',
+ actions: (item ? [{ label: 'Delete', action: 'assignment-delete', variant: 'danger', attrs: 'data-id="' + item.id + '"' }] : [])
+ .concat([
+ { label: 'Cancel', action: 'modal-cancel', variant: 'ghost' },
+ { label: item ? 'Save' : 'Add assignment', action: 'assignment-save', variant: 'primary',
+ attrs: 'data-id="' + (item ? item.id : '') + '"' }
+ ])
+ });
+ }
+
+ function saveAssignment(id) {
+ const nameInput = $('asgName');
+ const name = nameInput ? nameInput.value.trim() : '';
+ if (!name) {
+ UI.toast({ icon: 'book', title: 'What is due, luv?', body: 'A name is all we need to start.' });
+ if (nameInput) nameInput.focus();
+ return;
+ }
+
+ Storage.update((draft) => {
+ const existing = id ? draft.student.assignments.find((a) => a.id === id) : null;
+ const subjectId = ($('asgSubject') || {}).value || '';
+ const dueDate = ($('asgDue') || {}).value || '';
+ const difficulty = ($('asgDifficulty') || {}).value || 'medium';
+ const estimateRaw = Number(($('asgEstimate') || {}).value);
+ const estimateMinutes = estimateRaw > 0 ? estimateRaw : null;
+ const notes = (($('asgNotes') || {}).value || '').trim();
+
+ if (existing) {
+ existing.name = name; existing.subjectId = subjectId; existing.dueDate = dueDate;
+ existing.difficulty = difficulty; existing.estimateMinutes = estimateMinutes; existing.notes = notes;
+ } else {
+ draft.student.assignments.push({
+ id: Utils.uid('asg'), name: name, subjectId: subjectId, dueDate: dueDate,
+ difficulty: difficulty, estimateMinutes: estimateMinutes, status: 'pending',
+ notes: notes, createdAt: new Date().toISOString()
+ });
+ }
+ }, 'student-assignment');
+
+ UI.closeModal();
+ UI.toast({ icon: 'check', title: id ? 'Assignment updated' : 'Assignment added', body: name });
+ }
+
+ function markAssignmentDone(id) {
+ let name = '';
+ Storage.update((draft) => {
+ const item = draft.student.assignments.find((a) => a.id === id);
+ if (item) { item.status = 'done'; item.completedAt = new Date().toISOString(); name = item.name; }
+ }, 'student-assignment');
+ UI.toast({ icon: 'check', title: 'Nice work ♡', body: name ? name + ' is done.' : 'Marked as done.' });
+ }
+
+ function deleteAssignment(id) {
+ const item = (state().student.assignments || []).find((a) => a.id === id);
+ if (!item) return;
+ confirmTarget = { kind: 'assignment', id: item.id };
+ UI.confirm({
+ title: 'Delete this assignment?',
+ sub: '"' + item.name + '" will be removed. Nothing else is affected.',
+ confirmLabel: 'Delete it',
+ confirmAction: 'assignment-delete-confirm',
+ variant: 'danger'
+ });
+ }
+
+ function confirmDeleteAssignment() {
+ const target = confirmTarget && confirmTarget.kind === 'assignment' ? confirmTarget.id : '';
+ confirmTarget = null;
+ UI.closeModal();
+ if (!target) return;
+ Storage.update((draft) => {
+ draft.student.assignments = draft.student.assignments.filter((a) => a.id !== target);
+ }, 'student-assignment');
+ UI.toast({ icon: 'trash', title: 'Assignment deleted' });
+ }
+
+ /* ==================== Exams (Student mode, stage 1) ==================== */
+
+ function renderExams(s) {
+ const items = ((s.student && s.student.exams) || []).slice()
+ .sort((a, b) => (a.examDate || '9999') < (b.examDate || '9999') ? -1 : 1);
+
+ if (!items.length) {
+ setHtml('examList',
+ '<div class="empty-state"><span class="empty-ico">' + ico('calendar-check') + '</span><strong>No exams yet</strong>' +
+ '<p>Add a date and Luvli will help you keep an eye on it.</p>' +
+ '<button class="btn btn-primary" type="button" data-action="add-exam">+ Add exam</button></div>');
+ return;
+ }
+
+ setHtml('examList', items.map((exam) => {
+ const subject = (s.subjects || []).find((sub) => sub.id === exam.subjectId);
+ const confidence = Utils.clamp(Number(exam.confidence) || 0, 0, 5);
+ return '<div class="subject-card" data-id="' + exam.id + '">' +
+ '<div class="subject-top">' +
+ '<span class="subject-emoji">' + (subject ? esc(subject.emoji) : ico('calendar-check')) + '</span>' +
+ '<span class="subject-name">' + esc(exam.name) + '</span>' +
+ '<span class="chip chip-soft">Confidence ' + confidence + '/5</span>' +
+ '</div>' +
+ '<div class="subject-goal">' +
+ (exam.examDate ? 'On ' + esc(Utils.relativeDateLabel(exam.examDate)) : 'No date set') +
+ (subject ? ' · ' + esc(subject.name) : '') +
+ '</div>' +
+ (exam.topics && exam.topics.length ? '<div class="subject-next mt-12">Topics: ' + esc(exam.topics.join(', ')) + '</div>' : '') +
+ '<div class="subject-actions">' +
+ '<button class="btn btn-ghost btn-small" type="button" data-action="exam-edit" data-id="' + exam.id + '">Edit</button>' +
+ '<button class="btn btn-danger btn-small" type="button" data-action="exam-delete" data-id="' + exam.id + '">Delete</button>' +
+ '</div></div>';
+ }).join(''));
+ }
+
+ function openExamModal(id) {
+ const s = state();
+ const exam = id ? (s.student.exams || []).find((e) => e.id === id) : null;
+ const subjects = s.subjects || [];
+ const confidence = exam ? Utils.clamp(Number(exam.confidence) || 0, 0, 5) : 3;
+
+ UI.modal({
+ title: exam ? 'Edit exam' : 'New exam',
+ sub: 'One date to keep in sight, and how ready you feel about it.',
+ bodyHtml:
+ '<label class="field"><span class="field-label">Exam</span>' +
+ '<input class="input" id="examName" type="text" placeholder="e.g. Python exam" value="' + esc(exam ? exam.name : '') + '" /></label>' +
+ '<div class="field-row">' +
+ '<label class="field"><span class="field-label">Subject</span><select class="input" id="examSubject">' +
+ '<option value="">No subject</option>' +
+ subjects.map((sub) => '<option value="' + sub.id + '"' + (exam && exam.subjectId === sub.id ? ' selected' : '') + '>' +
+ esc(sub.emoji + ' ' + sub.name) + '</option>').join('') +
+ '</select></label>' +
+ '<label class="field"><span class="field-label">Date</span>' +
+ '<input class="input" id="examDate" type="date" value="' + esc(exam ? exam.examDate || '' : '') + '" /></label>' +
+ '</div>' +
+ '<label class="field"><span class="field-label">Topics (comma-separated)</span>' +
+ '<input class="input" id="examTopics" type="text" placeholder="e.g. loops, functions, recursion" value="' +
+ esc(exam && exam.topics ? exam.topics.join(', ') : '') + '" /></label>' +
+ '<label class="field"><span class="field-label">How ready do you feel: <span id="examConfidenceValue">' + confidence + '</span>/5</span>' +
+ '<input type="range" id="examConfidence" min="1" max="5" step="1" value="' + confidence + '" /></label>' +
+ '<label class="field"><span class="field-label">Notes</span>' +
+ '<textarea class="input" id="examNotes" rows="2">' + esc(exam ? exam.notes || '' : '') + '</textarea></label>',
+ actions: (exam ? [{ label: 'Delete', action: 'exam-delete', variant: 'danger', attrs: 'data-id="' + exam.id + '"' }] : [])
+ .concat([
+ { label: 'Cancel', action: 'modal-cancel', variant: 'ghost' },
+ { label: exam ? 'Save' : 'Add exam', action: 'exam-save', variant: 'primary',
+ attrs: 'data-id="' + (exam ? exam.id : '') + '"' }
+ ])
+ });
+
+ const range = $('examConfidence');
+ if (range) range.addEventListener('input', () => setText('examConfidenceValue', range.value));
+ }
+
+ function saveExam(id) {
+ const nameInput = $('examName');
+ const name = nameInput ? nameInput.value.trim() : '';
+ if (!name) {
+ UI.toast({ icon: 'flag', title: 'What is the exam called, luv?', body: 'A name is all we need to start.' });
+ if (nameInput) nameInput.focus();
+ return;
+ }
+
+ Storage.update((draft) => {
+ const existing = id ? draft.student.exams.find((e) => e.id === id) : null;
+ const subjectId = ($('examSubject') || {}).value || '';
+ const examDate = ($('examDate') || {}).value || '';
+ const topics = (($('examTopics') || {}).value || '').split(',').map((t) => t.trim()).filter(Boolean);
+ const confidence = Utils.clamp(Number(($('examConfidence') || {}).value) || 3, 1, 5);
+ const notes = (($('examNotes') || {}).value || '').trim();
+
+ if (existing) {
+ existing.name = name; existing.subjectId = subjectId; existing.examDate = examDate;
+ existing.topics = topics; existing.confidence = confidence; existing.notes = notes;
+ } else {
+ draft.student.exams.push({
+ id: Utils.uid('exam'), name: name, subjectId: subjectId, examDate: examDate,
+ topics: topics, confidence: confidence, notes: notes, createdAt: new Date().toISOString()
+ });
+ }
+ }, 'student-exam');
+
+ UI.closeModal();
+ UI.toast({ icon: 'flag', title: id ? 'Exam updated' : 'Exam added', body: name });
+ }
+
+ function deleteExam(id) {
+ const exam = (state().student.exams || []).find((e) => e.id === id);
+ if (!exam) return;
+ confirmTarget = { kind: 'exam', id: exam.id };
+ UI.confirm({
+ title: 'Delete this exam?',
+ sub: '"' + exam.name + '" will be removed. Nothing else is affected.',
+ confirmLabel: 'Delete it',
+ confirmAction: 'exam-delete-confirm',
+ variant: 'danger'
+ });
+ }
+
+ function confirmDeleteExam() {
+ const target = confirmTarget && confirmTarget.kind === 'exam' ? confirmTarget.id : '';
+ confirmTarget = null;
+ UI.closeModal();
+ if (!target) return;
+ Storage.update((draft) => {
+ draft.student.exams = draft.student.exams.filter((e) => e.id !== target);
+ }, 'student-exam');
+ UI.toast({ icon: 'trash', title: 'Exam deleted' });
+ }
+
  /** Log study you did away from Luvli. */
  function openLogSessionModal(subjectId) {
  const s = state();
@@ -2973,6 +3250,19 @@ const App = (() => {
  case 'subject-save':  saveSubject(id); break;
  case 'subject-delete':  deleteSubject(id); break;
  case 'subject-delete-confirm': confirmDeleteSubject(); break;
+
+ case 'add-assignment':  UI.closeModal(); openAssignmentModal(null); break;
+ case 'assignment-edit':  openAssignmentModal(id); break;
+ case 'assignment-save':  saveAssignment(id); break;
+ case 'assignment-done':  markAssignmentDone(id); break;
+ case 'assignment-delete':  deleteAssignment(id); break;
+ case 'assignment-delete-confirm': confirmDeleteAssignment(); break;
+
+ case 'add-exam':  UI.closeModal(); openExamModal(null); break;
+ case 'exam-edit':  openExamModal(id); break;
+ case 'exam-save':  saveExam(id); break;
+ case 'exam-delete':  deleteExam(id); break;
+ case 'exam-delete-confirm': confirmDeleteExam(); break;
  case 'session-delete':  deleteSession(id); break;
  case 'log-save':  saveLoggedSession(); break;
 
@@ -3188,6 +3478,8 @@ const App = (() => {
 
  // Study
  on('addSubjectBtn', () => openSubjectModal(null));
+ on('addAssignmentBtn', () => openAssignmentModal(null));
+ on('addExamBtn', () => openExamModal(null));
 
  // Affirmations
  on('afShuffleBtn', (event) => shuffleAffirmation(event));
