@@ -32,7 +32,7 @@ var LuvliCoachConfig = (function () {
      * 'local' — the on-device brain (default, works offline).
      * 'model' — your serverless coach endpoint answers instead.
      */
-    mode: 'model',
+    mode: 'local',
 
     /**
      * Your coach endpoint, e.g. '/api/luvli-coach' (Netlify) or
@@ -40,8 +40,13 @@ var LuvliCoachConfig = (function () {
      * Requires a signed-in Luvli user's session token (see
      * netlify/functions/luvli-coach.js) and COACH_API_KEY set in Netlify's
      * environment — without either, this fails soft back to 'local'.
+     *
+     * Left off for now (no OpenAI billing set up yet — see the repo's commit
+     * history / ask the person who set this up). Flip mode to 'model' and set
+     * endpoint to '/api/luvli-coach' whenever that's ready; the serverless
+     * function and its auth check are already in place and tested.
      */
-    endpoint: '/api/luvli-coach',
+    endpoint: '',
 
     /**
      * A single, honest sentence shown under the composer so the person knows
