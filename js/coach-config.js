@@ -32,13 +32,16 @@ var LuvliCoachConfig = (function () {
      * 'local' — the on-device brain (default, works offline).
      * 'model' — your serverless coach endpoint answers instead.
      */
-    mode: 'local',
+    mode: 'model',
 
     /**
      * Your coach endpoint, e.g. '/api/luvli-coach' (Netlify) or
      * 'https://your-app.vercel.app/api/luvli-coach'. Only used in 'model' mode.
+     * Requires a signed-in Luvli user's session token (see
+     * netlify/functions/luvli-coach.js) and COACH_API_KEY set in Netlify's
+     * environment — without either, this fails soft back to 'local'.
      */
-    endpoint: '',
+    endpoint: '/api/luvli-coach',
 
     /**
      * A single, honest sentence shown under the composer so the person knows

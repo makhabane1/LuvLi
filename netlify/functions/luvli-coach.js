@@ -26,8 +26,40 @@
 
    Nothing here is required for Luvli to work: with no key set, the coach simply
    uses its on-device brain and this function is never called.
+
+   Who can call this
+   ------------------
+   Every request must carry a real, signed-in Luvli user's session token
+   (Authorization: Bearer <access_token>), verified against Supabase Auth
+   below — the same pattern as netlify/functions/delete-account.js. Without
+   this, anyone who finds this URL could call it directly and spend your
+   COACH_API_KEY's budget; CORS alone does not stop that (it only affects
+   browsers, not direct requests).
    ========================================================================== */
 'use strict';
+
+// Public by design — the same URL/anon key already committed in supabase.js.
+// Only used here to verify a caller's own session token, never to act on
+// their behalf.
+const SUPABASE_URL = 'https://eablejtazhyxbdjvfjmz.supabase.co';
+const SUPABASE_ANON_KEY = 'sb_publishable_xVHqVz-QJICcto3PFWEVeA_yCCy-j6q';
+
+/** Resolves a Luvli session token to a real, currently-valid user id — or null. */
+async function verifiedUserId(event) {
+  const authHeader = event.headers.authorization || event.headers.Authorization || '';
+  const token = authHeader.replace(/^Bearer\s+/i, '').trim();
+  if (!token) return null;
+  try {
+    const res = await fetch(SUPABASE_URL + '/auth/v1/user', {
+      headers: { apikey: SUPABASE_ANON_KEY, Authorization: 'Bearer ' + token }
+    });
+    if (!res.ok) return null;
+    const user = await res.json();
+    return (user && user.id) || null;
+  } catch (err) {
+    return null;
+  }
+}
 
 /* ------------------------------- configuration ---------------------------- */
 
@@ -142,6 +174,9 @@ exports.handler = async (event) => {
 
   if (event.httpMethod === 'OPTIONS') return { statusCode: 204, headers: cors, body: '' };
   if (event.httpMethod !== 'POST') return json(405, { error: 'Use POST.' }, cors);
+
+  const userId = await verifiedUserId(event);
+  if (!userId) return json(401, { error: 'Please sign in to Luvli first.' }, cors);
 
   const key = process.env.COACH_API_KEY;
   if (!key) {

@@ -829,12 +829,20 @@ const CoachModel = (() => {
  preferences: (typeof CoachMemory !== 'undefined' && CoachMemory.prefs) ? CoachMemory.prefs() : {}
  };
 
- return fetch(cfg.endpoint, {
+ // The endpoint requires a signed-in Luvli user's session token (see
+ // netlify/functions/luvli-coach.js's verifiedUserId) — without it every
+ // call is refused with 401, which the .catch() below turns into a quiet
+ // fall-back to the on-device coach.
+ const tokenPromise = (typeof window !== 'undefined' && window.supabaseClient)
+ ? window.supabaseClient.auth.getSession().then((res) => (res.data && res.data.session && res.data.session.access_token) || '')
+ : Promise.resolve('');
+
+ return tokenPromise.then((token) => fetch(cfg.endpoint, {
  method: 'POST',
- headers: { 'Content-Type': 'application/json' },
+ headers: Object.assign({ 'Content-Type': 'application/json' }, token ? { Authorization: 'Bearer ' + token } : {}),
  body: JSON.stringify(body),
  signal: controller ? controller.signal : undefined
- })
+ }))
  .then((res) => { window.clearTimeout(timer); if (!res.ok) throw new Error('coach ' + res.status); return res.json(); })
  .then((data) => {
  const replyText = data && typeof data.reply === 'string' ? data.reply.trim() : '';
