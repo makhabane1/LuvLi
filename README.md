@@ -51,6 +51,7 @@ js/notifications.js   gentle reminders (with Snooze / Start now buttons)
 js/affirmations.js    affirmation library + its UI builders
 js/progress.js        focus time, tasks, streaks, insight numbers
 js/sync.js            optional sync hook (off by default, adapter-shaped)
+js/ics-export.js      builds a real .ics file from your day (export to calendar)
 js/app.js             navigation, every screen, modals, settings, interactions
 js/auth-config.js     your Google OAuth client ID (real Google sign-in; empty = local)
 netlify.toml          deploy config for the static app + its serverless functions
@@ -108,8 +109,9 @@ what you missed (kindly) → a free-window task from your list → a wellness pa
 blank page”. Every answer explains itself and can be started, ticked off or placed.
 
 **My Day** · Day navigation, the **Smart Scheduler** list, quick routines, a **draggable Day grid**
-(drag to move, drag the bottom edge to stretch — 5-minute snapping and clash-aware) and the full
-activity list with complete / edit / reschedule / delete.
+(drag to move, drag the bottom edge to stretch — 5-minute snapping and clash-aware), the full
+activity list with complete / edit / reschedule / delete, and **export to your calendar** — a real
+`.ics` file (today, this week, or everything) that Google, Apple or Outlook Calendar can open.
 
 **Smart planning**
 * **Natural language** — type “python 45m high tomorrow 10:00” and Luvli fills the form in.

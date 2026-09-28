@@ -35,7 +35,7 @@ vm.createContext(sandbox);
 // icons.js comes first: scheduler.js, affirmations.js and progress.js all call
 // ico() when they build markup, so the shim needs it just like the browser.
 const sources = ['js/icons.js', 'js/storage.js', 'js/scheduler.js', 'js/affirmations.js',
-  'js/progress.js', 'js/personality.js']
+  'js/progress.js', 'js/personality.js', 'js/ics-export.js']
   .map((file) => fs.readFileSync(path.join(root, file), 'utf8')).join('\n;\n');
 
 const test = `
@@ -475,6 +475,39 @@ const test = `
   check('the memory summary explains itself',
     LuvliStyle.memorySummary(Storage.get()).summary.indexOf('Luvli') > -1,
     LuvliStyle.memorySummary(Storage.get()).summary);
+
+  /* ---- 📅 IcsExport (Export to your calendar) ----
+     Built with String.fromCharCode for CR/LF/backslash rather than escape
+     sequences: this whole test lives inside a template literal one level up
+     (see "const test = \`" above), so a literal \n or \\ here would already
+     be turned into a real control character before this code ever runs. */
+  const CR = String.fromCharCode(13);
+  const LF = String.fromCharCode(10);
+  const CRLF = CR + LF;
+  const BS = String.fromCharCode(92);
+
+  const icsTasks = [
+    { id: 'task_a', date: '2026-09-10', start: '09:00', end: '10:30', name: 'Study, Python; basics',
+      category: 'study', notes: 'Chapter 1' + LF + 'and chapter 2', completed: false },
+    { id: 'task_b', date: '2026-09-11', start: '14:00', end: '14:30', name: 'A very long activity name '.repeat(4).trim(),
+      category: 'work', completed: true },
+    { id: 'task_bad', date: '', start: '', end: '', name: 'Missing its date and times' }
+  ];
+  const ics = IcsExport.build(icsTasks);
+  check('the document opens and closes a VCALENDAR',
+    ics.indexOf('BEGIN:VCALENDAR') === 0 && ics.trim().endsWith('END:VCALENDAR'));
+  check('one VEVENT per valid task, and the incomplete one is skipped',
+    (ics.match(/BEGIN:VEVENT/g) || []).length === 2 && (ics.match(/END:VEVENT/g) || []).length === 2);
+  check('start and end times are stamped as local wall-clock time',
+    ics.indexOf('DTSTART:20260910T090000') > -1 && ics.indexOf('DTEND:20260910T103000') > -1);
+  check('commas and semicolons in text fields are escaped',
+    ics.indexOf('Study' + BS + ', Python' + BS + '; basics') > -1);
+  check('an embedded newline is escaped to a literal backslash-n',
+    ics.indexOf('Chapter 1' + BS + 'nand chapter 2') > -1);
+  check('a completed task is marked confirmed', ics.indexOf('STATUS:CONFIRMED') > -1);
+  check('lines longer than 75 octets are folded with a leading space',
+    ics.split(CRLF).every((line) => line.length <= 75 || line.startsWith(' ')));
+  check('every line ends with a real CRLF', ics.indexOf(CRLF) > -1 && ics.indexOf(LF + LF) === -1);
 
   const failed = results.filter((item) => !item.pass);
   console.log('');

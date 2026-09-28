@@ -102,7 +102,8 @@ sandbox.removeEventListener = () => {};
 vm.createContext(sandbox);
 
 const files = ['js/icons.js', 'js/storage.js', 'js/auth.js', 'js/scheduler.js', 'js/affirmations.js',
-  'js/progress.js', 'js/personality.js', 'js/pomodoro.js', 'js/notifications.js', 'js/sync.js', 'js/app.js'];
+  'js/progress.js', 'js/personality.js', 'js/pomodoro.js', 'js/notifications.js', 'js/sync.js',
+  'js/ics-export.js', 'js/app.js'];
 
 /* --------------------------------- helpers ------------------------------- */
 const results = [];
@@ -389,6 +390,21 @@ try {
   fireAction('rescue-tired');
   check('"I am tired" adds a pause',
     run('Storage.get().tasks.filter(function(t){ return t.category === "break"; }).length') > 0);
+
+  /* --------------------- PHASE 2: export to calendar --------------------- */
+  fireNav('day');
+  fireAction('calendar-export-menu');
+  check('the calendar export menu opens', field('modalRoot').children.length > 0);
+  check('it offers today, this week and everything',
+    (function () {
+      const html = field('modalRoot').children[field('modalRoot').children.length - 1].innerHTML;
+      return html.indexOf('calendar-export-today') > -1 && html.indexOf('calendar-export-week') > -1 &&
+        html.indexOf('calendar-export-all') > -1;
+    })());
+  fireAction('calendar-export-today');
+  check('choosing a range downloads the file and confirms it with a toast',
+    field('toastStack').children.length > 0 &&
+    field('toastStack').children[field('toastStack').children.length - 1].innerHTML.indexOf('Calendar file saved') > -1);
 
   /* ------------------- PHASE 2: insights on Progress -------------------- */
   run('Storage.update(function(d){ for (var i = 0; i < 4; i++) { d.tasks.push({ id:"ins_"+i, date: Utils.todayKey(), name:"Insight "+i, category:"study", start:"10:00", end:"11:00", priority:"medium", notes:"", completed:true, completedAt: new Date().toISOString() }); } }, "task")');

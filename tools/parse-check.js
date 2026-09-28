@@ -3,7 +3,7 @@
 const { execFileSync } = require('child_process');
 const path = require('path');
 const files = ['js/icons.js', 'js/storage.js', 'js/scheduler.js', 'js/affirmations.js', 'js/progress.js',
-  'js/pomodoro.js', 'js/notifications.js', 'js/sync.js', 'js/app.js'];
+  'js/pomodoro.js', 'js/notifications.js', 'js/sync.js', 'js/ics-export.js', 'js/app.js'];
 let bad = 0;
 for (const f of files) {
   try {

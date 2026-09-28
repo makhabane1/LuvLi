@@ -3511,6 +3511,57 @@ const App = (() => {
  });
  }
 
+ /* ------------------------------ CALENDAR --------------------------------- */
+ /** "Export to your calendar" — Today / This week / Everything. */
+ function openCalendarExportModal() {
+ UI.modal({
+ title: 'Export to your calendar',
+ sub: 'Download a file that Google, Apple or Outlook Calendar can open — your day, on your terms.',
+ actions: [
+ { label: 'Today', action: 'calendar-export-today', variant: 'primary' },
+ { label: 'This week', action: 'calendar-export-week', variant: 'soft' },
+ { label: 'Everything', action: 'calendar-export-all', variant: 'soft' },
+ { label: 'Never mind', action: 'modal-cancel', variant: 'ghost' }
+ ]
+ });
+ }
+
+ /** Build and download the .ics file for a range of activities. */
+ function exportCalendar(range) {
+ const s = state();
+ const today = Utils.todayKey();
+ const all = s.tasks || [];
+ let tasks;
+ let label;
+ if (range === 'today') {
+ tasks = all.filter((t) => t.date === today);
+ label = 'today';
+ } else if (range === 'week') {
+ const end = Utils.addDays(today, 6);
+ tasks = all.filter((t) => t.date >= today && t.date <= end);
+ label = 'this-week';
+ } else {
+ tasks = all;
+ label = 'everything';
+ }
+
+ if (!tasks.length) {
+ UI.toast({ icon: 'calendar', title: 'Nothing to export yet', body: 'Add a few activities first, luv.' });
+ return;
+ }
+
+ const blob = new Blob([IcsExport.build(tasks)], { type: 'text/calendar;charset=utf-8' });
+ const url = URL.createObjectURL(blob);
+ const link = document.createElement('a');
+ link.href = url;
+ link.download = 'luvli-' + label + '-' + today + '.ics';
+ document.body.appendChild(link);
+ link.click();
+ link.remove();
+ URL.revokeObjectURL(url);
+ UI.toast({ icon: 'download', title: 'Calendar file saved', body: 'Open it, or import it into Google, Apple or Outlook Calendar.' });
+ }
+
  /* --------------------------------- DATA --------------------------------- */
  function exportData() {
  const blob = new Blob([Storage.exportJSON()], { type: 'application/json' });
@@ -3651,6 +3702,10 @@ const App = (() => {
  case 'enable-notifications': enableNotifications(); break;
  case 'dismiss-notifications': dismissNotificationPrompt(); break;
  case 'install-app':  installApp(); break;
+ case 'calendar-export-menu':  openCalendarExportModal(); break;
+ case 'calendar-export-today':  UI.closeModal(); exportCalendar('today'); break;
+ case 'calendar-export-week':  UI.closeModal(); exportCalendar('week'); break;
+ case 'calendar-export-all':  UI.closeModal(); exportCalendar('all'); break;
 
  /* --- the gentle rescue menu --- */
  case 'rescue-me':  openRescueModal(); break;

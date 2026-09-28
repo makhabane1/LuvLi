@@ -257,7 +257,12 @@
  <button class="icon-btn" id="dayNext" type="button" aria-label="Next day">›</button>
  <button class="btn btn-ghost btn-small" id="dayTodayBtn" type="button">Today</button>
  </div>
+ <div class="row-gap">
+ <button class="icon-btn" data-action="calendar-export-menu" type="button" aria-label="Export to calendar" title="Export to calendar">
+ <span data-ico="download"></span>
+ </button>
  <button class="btn btn-primary" id="addActivityBtn" type="button">+ Add activity</button>
+ </div>
  </div>
 
  <div class="day-alert" id="dayAlert" hidden></div>
@@ -962,6 +967,7 @@
  <script src="js/pomodoro.js"></script>
  <script src="js/notifications.js"></script>
  <script src="js/sync.js"></script>
+ <script src="js/ics-export.js"></script>
  <script src="js/app.js"></script>
 </body>
 </html>
