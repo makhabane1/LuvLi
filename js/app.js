@@ -3462,6 +3462,7 @@ const App = (() => {
  renderSettings();
  if (result === 'granted') {
  Notifier.push({ icon: 'bell', title: 'Reminders are on', body: 'I will softly let you know what is coming up.' });
+ if (typeof LuvliPush !== 'undefined') LuvliPush.syncIfGranted();
  } else {
  UI.toast({ icon: 'heart', title: 'That is completely okay', body: 'You will still see reminders inside Luvli.' });
  }
@@ -4023,7 +4024,9 @@ const App = (() => {
  Auth.ready().then(() => {
  if (!requireAuth()) return;
  renderAccountCard();
- if (typeof SupabaseSync !== 'undefined') SupabaseSync.init();
+ if (typeof SupabaseSync !== 'undefined') {
+ SupabaseSync.init().then(() => { if (typeof LuvliPush !== 'undefined') LuvliPush.syncIfGranted(); });
+ }
 
  if (firstEverVisit) {
  setTimeout(() => UI.toast({

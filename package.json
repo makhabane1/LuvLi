@@ -4,7 +4,14 @@
   "private": true,
   "description": "Luvli ♡ — a gentle, local-first day-management companion in plain HTML, CSS and JavaScript.",
   "homepage": "./index.html",
-  "keywords": ["productivity", "planner", "pomodoro", "vanilla-js", "local-first", "pwa"],
+  "keywords": [
+    "productivity",
+    "planner",
+    "pomodoro",
+    "vanilla-js",
+    "local-first",
+    "pwa"
+  ],
   "license": "MIT",
   "scripts": {
     "start": "npx --yes http-server . -p 8080 -c-1",
@@ -20,5 +27,8 @@
   },
   "engines": {
     "node": ">=18"
+  },
+  "dependencies": {
+    "web-push": "^3.6.7"
   }
 }

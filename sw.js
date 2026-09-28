@@ -1,14 +1,15 @@
 /* =============================================================================
    sw.js — Luvli's service worker
    -----------------------------------------------------------------------------
-   Two jobs only:
+   Three jobs:
      1. keep the app working offline (cache the shell, serve from cache first)
      2. let reminders carry buttons ("Snooze 10 min" / "Start now")
+     3. show real push reminders sent by the server while Luvli is closed
    Registered by app.js — and only over http(s), because file:// has no worker.
    ========================================================================== */
 'use strict';
 
-const CACHE = 'luvli-v2';
+const CACHE = 'luvli-v3';
 const SHELL = [
   './',
   './index.html',
@@ -93,8 +94,31 @@ self.addEventListener('notificationclick', (event) => {
       return;
     }
 
-    // No open window: bring Luvli back
-    if (self.clients.openWindow) await self.clients.openWindow('./');
+    // No open window: bring Luvli back — straight into the app, not './',
+    // which the live site now serves as the public landing page.
+    if (self.clients.openWindow) await self.clients.openWindow(data.url || './index.html');
+  })());
+});
+
+/* ---------------------------- push notifications --------------------------
+   Sent by netlify/functions/send-reminders.js when an activity is about to
+   start, even if Luvli is closed. If a Luvli tab is open and visible, its own
+   in-app reminder already covers it — skip, so nobody gets reminded twice. */
+self.addEventListener('push', (event) => {
+  let data = {};
+  try { data = event.data ? event.data.json() : {}; } catch (err) { data = { body: event.data ? event.data.text() : '' }; }
+
+  event.waitUntil((async () => {
+    const windows = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
+    if (windows.some((w) => w.visibilityState === 'visible')) return;
+    await self.registration.showNotification(data.title || 'Luvli', {
+      body: data.body || '',
+      icon: 'assets/icon-192.png',
+      badge: 'assets/icon-192.png',
+      tag: data.tag || 'luvli-reminder',
+      data: { id: data.id || '', name: data.name || '', url: data.url || './index.html' },
+      actions: [{ action: 'start', title: 'Start now' }, { action: 'snooze', title: 'Snooze 10 min' }]
+    });
   })());
 });
 

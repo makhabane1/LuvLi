@@ -33,6 +33,11 @@
   to = "/.netlify/functions/delete-account"
   status = 200
 
+# Real push reminders: checks for activities about to start every 5 minutes.
+# Needs SUPABASE_SERVICE_ROLE_KEY and VAPID_PRIVATE_KEY set; otherwise no-ops.
+[functions."send-reminders"]
+  schedule = "*/5 * * * *"
+
 # A gentle security header set for the static app
 [[headers]]
   for = "/*"
