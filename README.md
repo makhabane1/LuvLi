@@ -53,10 +53,7 @@ js/progress.js        focus time, tasks, streaks, insight numbers
 js/sync.js            optional sync hook (off by default, adapter-shaped)
 js/app.js             navigation, every screen, modals, settings, interactions
 js/auth-config.js     your Google OAuth client ID (real Google sign-in; empty = local)
-js/coach-config.js    'local' or your AI endpoint (real LLM coach; default = on-device)
-netlify/functions/    the optional real-AI coach function (Netlify)
-api/                  the same coach function for Vercel
-netlify.toml          deploy config: static app + the /api/luvli-coach route
+netlify.toml          deploy config for the static app + its serverless functions
 tools/                plain-Node checkers and tests (no dependencies)
 assets/               app icons (SVG + generated PNGs)
 ```
@@ -139,13 +136,8 @@ optional sync and your data.
 
 ---
 
-## Real integrations (both optional, both off by default)
+## Real Google sign-in (optional, off by default)
 
-Luvli ships local-first and works completely with nothing configured. Two things can be made
-**real** by pointing Luvli at services *you* control — and until you do, Luvli is honest about
-running its on-device version instead.
-
-### 1 · Real Google sign-in
 Out of the box the "Continue with Google" button is a clearly-labelled local stand-in (it tells
 you it is local). Give it a Google OAuth client ID and the very same button becomes the genuine
 Google Identity Services flow — Google shows its own account chooser and returns a signed ID
@@ -158,42 +150,6 @@ token, which Luvli decodes for your name and email.
 That is the whole change: `js/auth-ui.js` loads Google's library on demand, and falls back to the
 local stand-in if Google cannot be shown, so nobody is ever stranded. A client ID is public — it is
 safe to ship. There is no secret to leak, and Luvli never stores a Google password.
-
-### 2 · Real AI coach (an actual LLM)
-
-[`ai-coach.html`](ai-coach.html) has a coach that answers every message. By default that is
-Luvli's own on-device understanding engine — real, private and offline, but not a language model.
-Point it at the small serverless function shipped in this repo and every message is answered by a
-real model instead, with your live day as context.
-
-**Why a function?** A model API key pasted into browser JavaScript is a key given away. So the key
-lives in an environment variable on your function; the browser only ever calls your own endpoint.
-
-* Netlify: [`netlify/functions/luvli-coach.js`](netlify/functions/luvli-coach.js) (served at
-  `/api/luvli-coach` by [`netlify.toml`](netlify.toml)).
-* Vercel: [`api/luvli-coach.js`](api/luvli-coach.js).
-
-Works with **OpenAI** or **Anthropic** (set `COACH_PROVIDER`). Then in
-[`js/coach-config.js`](js/coach-config.js):
-
-```js
-mode: 'model',
-endpoint: '/api/luvli-coach'
-```
-
-Environment variables on your host:
-
-| Variable | Required | What it is |
-| --- | --- | --- |
-| `COACH_API_KEY` | yes | your model provider key |
-| `COACH_PROVIDER` | no | `openai` (default) or `anthropic` |
-| `COACH_MODEL` | no | e.g. `gpt-4o-mini`, `claude-3-5-haiku-latest` |
-| `LUVLI_ALLOWED_ORIGIN` | no | lock CORS to your site |
-
-It is **fail-soft by design**: if the key is missing, the model errors, or the network drops, the
-function returns `{ degraded: true }` and the page quietly falls back to the on-device brain. The
-coach can never go dead because a call failed — and a line under the composer always says plainly
-whether the on-device coach or a real model is answering.
 
 ---
 
@@ -302,8 +258,6 @@ the UI which screens to repaint (batched once per animation frame).
 
 ## Ideas for later
 
-* Real AI for the *scheduler*: swap `Scheduler.suggestions()` for a model call — the coach
-  endpoint is a working template to copy.
 * Native apps that can act on the study/distraction preferences.
 * Shared plans (a partner or study group seeing the same day).
 

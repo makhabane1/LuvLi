@@ -85,7 +85,7 @@ const usedActions = unique(actionsInHtml.concat(actionsInJs));
 const handledActions = unique(handled);
 // Emitted with string concatenation (invisible to the scan), handled by the
 // service worker rather than the page, or used from one of the companion pages
-// (personality.html, ai-coach.html, vision-board.html) instead of index.html —
+// (personality.html, vision-board.html) instead of index.html —
 // so they only *look* unhandled from here.
 const dynamicActions = [
   'toggle-aff-category', 'remove-app', 'snooze', 'start',

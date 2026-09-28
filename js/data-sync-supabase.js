@@ -8,9 +8,9 @@
    changes out to the cloud and pulls them back in on load.
 
    Deliberately NOT keyed off Storage.update()'s "reason" string: tasks and
-   backlog are touched by a dozen+ different reasons across app.js,
-   scheduler.js and ai-coach.js (task/backlog/optimize/lighten/trim/coach-*),
-   and hand-maintaining that list would silently drift out of date. Instead
+   backlog are touched by a dozen+ different reasons across app.js and
+   scheduler.js (task/backlog/optimize/lighten/trim/...), and hand-maintaining
+   that list would silently drift out of date. Instead
    every state change is checked by diffing state.tasks/state.backlog
    against the last-synced snapshot — simple, and correct regardless of
    which feature made the change.

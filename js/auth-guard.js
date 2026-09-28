@@ -2,7 +2,7 @@
    Luvli ♡ — js/auth-guard.js
    --------------------------------------------------------------------------
    A one-line guard for Luvli's companion pages (personality.html,
-   ai-coach.html, vision-board.html). The main app guards itself in app.js;
+   vision-board.html). The main app guards itself in app.js;
    these pages only need to know "is anybody signed in?" and, if not, hand
    over to login.html.
 

@@ -18,9 +18,7 @@
      (e.g. http://localhost:8080, https://your-domain).
      It is safe to ship: a client ID is public, not a secret.
 
-   Nothing here is a password, a token or a secret. Secrets that must stay
-   server-side (an AI provider key) never belong in this file — they live in the
-   coach's serverless function instead (see netlify/functions/luvli-coach.js).
+   Nothing here is a password, a token or a secret.
    ========================================================================== */
 'use strict';
 

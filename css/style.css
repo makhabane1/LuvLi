@@ -1589,7 +1589,6 @@ code {
 .notify-ico .ico { font-size: inherit; }
 .brand-mark .ico { width: 1.1em; height: 1.1em; }
 .chip-streak .ico, .chip-soft .ico { width: 0.95em; height: 0.95em; }
-.coach-avatar-face .ico, .coach-orb .ico { width: 1em; height: 1em; }
 
 /* --------------------- Floating hearts & sparkles ----------------------- */
 .fx-layer { position: fixed; inset: 0; z-index: 70; pointer-events: none; overflow: hidden; }

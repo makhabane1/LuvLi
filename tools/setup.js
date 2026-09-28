@@ -2,18 +2,14 @@
 /* ==========================================================================
    Luvli ♡ — tools/setup.js
    --------------------------------------------------------------------------
-   An interactive setup that writes your two real-integration values into the
-   config files for you, so you never have to edit them by hand.
+   An interactive setup that writes your real Google sign-in client ID into
+   js/auth-config.js for you, so you never have to edit it by hand.
 
      npm run setup
 
-   It asks for:
-     1. your Google OAuth client ID   → js/auth-config.js
-     2. your coach endpoint + key     → js/coach-config.js  and  .env
-
-   It is careful: it reads each file, replaces only the one quoted value, and
+   It is careful: it reads the file, replaces only the one quoted value, and
    writes it back unchanged otherwise. Nothing is sent anywhere — this script
-   only touches files on your machine.
+   only touches a file on your machine.
    ========================================================================== */
 'use strict';
 
@@ -23,8 +19,6 @@ const readline = require('readline');
 
 const root = path.join(__dirname, '..');
 const AUTH_CONFIG = path.join(root, 'js', 'auth-config.js');
-const COACH_CONFIG = path.join(root, 'js', 'coach-config.js');
-const ENV_FILE = path.join(root, '.env');
 
 /*
  * Asking for input, two ways.
@@ -110,14 +104,14 @@ async function main() {
   console.log('');
   console.log('  Luvli ♡  setup');
   console.log('  -------------');
-  console.log('  Press Enter to skip any question and keep the current value.');
+  console.log('  Press Enter to skip and keep the current value.');
   console.log('');
 
   /* ------------------------- 1. Google client ID ------------------------- */
   const currentAuth = readFileOr(AUTH_CONFIG, '');
   const currentClientId = getProperty(currentAuth, 'clientId');
 
-  console.log('  1) Real Google sign-in');
+  console.log('  Real Google sign-in');
   console.log('     Google Cloud Console -> APIs & Services -> Credentials');
   console.log('     -> Create credentials -> OAuth client ID -> Web application.');
   console.log('     Add http://localhost:8080 under "Authorised JavaScript origins".');
@@ -143,53 +137,11 @@ async function main() {
     console.log('     – skipped (Google sign-in stays local)');
   }
 
-  /* --------------------------- 2. Coach model ---------------------------- */
-  console.log('');
-  console.log('  2) Real AI coach');
-  console.log('     Deploy netlify/functions/luvli-coach.js (or api/luvli-coach.js),');
-  console.log('     then enter the URL the page should call.');
-  console.log('     For local development use:  /api/luvli-coach');
-  const endpoint = await ask('     Coach endpoint [/api/luvli-coach]: ');
-
-  if (endpoint) {
-    const currentCoach = readFileOr(COACH_CONFIG, '');
-    if (!currentCoach) {
-      console.log('     ! js/coach-config.js was not found. Skipping.');
-    } else {
-      let updated = setProperty(currentCoach, 'mode', 'model');
-      updated = updated && setProperty(updated, 'endpoint', endpoint);
-      if (!updated) {
-        console.log('     ! Could not find the mode/endpoint lines. Skipping.');
-      } else {
-        fs.writeFileSync(COACH_CONFIG, updated, 'utf8');
-        console.log('     ✓ switched the coach to model mode in js/coach-config.js');
-      }
-    }
-  } else {
-    console.log('     – skipped (the coach stays fully on-device)');
-  }
-
-  /* ------------------------------ 3. The key ----------------------------- */
-  console.log('');
-  console.log('  3) Your model API key (the ONE secret).');
-  console.log('     Get one:  https://platform.openai.com/api-keys');
-  console.log('         or:   https://console.anthropic.com/settings/keys');
-  const apiKey = await ask('     API key (written to .env, never committed): ');
-
-  if (apiKey) {
-    const currentEnv = readFileOr(ENV_FILE, readFileOr(path.join(root, '.env.example'), 'COACH_API_KEY=\nCOACH_PROVIDER=openai\nCOACH_MODEL=\nLUVLI_ALLOWED_ORIGIN=\n'));
-    const updated = currentEnv.replace(/COACH_API_KEY=.*/g, 'COACH_API_KEY=' + apiKey);
-    fs.writeFileSync(ENV_FILE, updated, 'utf8');
-    console.log('     ✓ wrote your key into .env (which .gitignore already protects)');
-  } else {
-    console.log('     – skipped. Without a key the coach just uses its on-device brain.');
-  }
-
   /* -------------------------------- done -------------------------------- */
   console.log('');
   console.log('  Done ♡');
   console.log('');
-  console.log('  Next:  npm run dev     starts Luvli + the coach function locally');
+  console.log('  Next:  npm run dev     starts Luvli locally');
   console.log('         npm run verify  checks everything still passes');
   console.log('');
   if (rl) rl.close();

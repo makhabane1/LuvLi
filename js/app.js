@@ -728,7 +728,6 @@ const App = (() => {
      total + Math.max(0, Scheduler.timeToMinutes(t.end) - Scheduler.timeToMinutes(t.start)), 0);
    const actions = [];
 
-   actions.push({ label: 'Ask Luvli', icon: 'cpu', href: 'ai-coach.html' });
    if (missed.length) actions.push({ label: 'Fit them in', icon: 'wand', action: 'optimize-day' });
    if (open.length >= 3 && planned > freeMinutes + 45) {
      actions.push({ label: 'Move one to tomorrow', icon: 'calendar', action: 'lighten-day' });
