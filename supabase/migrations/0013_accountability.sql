@@ -16,12 +16,15 @@ create table public.friendships (
   accepted_at timestamptz,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
-  constraint users_not_same check (user_id != friend_user_id),
-  constraint unique_friendship unique (least(user_id, friend_user_id), greatest(user_id, friend_user_id))
+  constraint users_not_same check (user_id != friend_user_id)
 );
 create index friendships_user_idx on public.friendships (user_id, status);
 create index friendships_friend_idx on public.friendships (friend_user_id, status);
 create index friendships_code_idx on public.friendships (invite_code);
+-- Ensure only one friendship relationship per pair (handle via application logic or trigger)
+create unique index friendships_unique_pair
+  on public.friendships (least(user_id, friend_user_id), greatest(user_id, friend_user_id))
+  where status != 'blocked';
 
 -- ---------------------------------------------------------------------------
 -- friend_streaks — Denormalized daily streaks for fast friend comparison
