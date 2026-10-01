@@ -645,6 +645,200 @@ const Accountability = (() => {
   }
 
   // =========================================================================
+  // GAMIFICATION (Phase 4)
+  // =========================================================================
+
+  function getBadges(userStreaks) {
+    const badges = [];
+
+    if (!userStreaks) return badges;
+
+    const currentStreak = userStreaks.current || 0;
+    const bestStreak = userStreaks.best || 0;
+    const totalStreakDays = Object.keys(state.streaks || {}).length;
+
+    // Streak badges
+    if (currentStreak >= 3) badges.push({ id: 'streak-3', name: '🔥 On Fire', desc: '3-day streak' });
+    if (currentStreak >= 7) badges.push({ id: 'streak-7', name: '⭐ Week Warrior', desc: '7-day streak' });
+    if (currentStreak >= 30) badges.push({ id: 'streak-30', name: '🏆 Month Master', desc: '30-day streak' });
+    if (currentStreak >= 100) badges.push({ id: 'streak-100', name: '👑 Century Club', desc: '100-day streak' });
+
+    // Best streak badges
+    if (bestStreak >= 10) badges.push({ id: 'best-10', name: '💪 Peak Performer', desc: 'Best: 10 days' });
+    if (bestStreak >= 50) badges.push({ id: 'best-50', name: '⚡ Legendary', desc: 'Best: 50 days' });
+
+    // Consistency badges
+    if (totalStreakDays >= 30) badges.push({ id: 'consistent-30', name: '📈 Rising Star', desc: '30 active days' });
+    if (totalStreakDays >= 100) badges.push({ id: 'consistent-100', name: '✨ Unstoppable', desc: '100 active days' });
+
+    return badges;
+  }
+
+  function getGroupMultiplier(roomMembers) {
+    if (!roomMembers || roomMembers.length < 2) return 1.0;
+
+    // 2 members: 1.2x | 3 members: 1.5x | 4+ members: 2.0x
+    const focusingCount = roomMembers.filter(m => m.status === 'focusing').length;
+    if (focusingCount <= 1) return 1.0;
+    if (focusingCount === 2) return 1.2;
+    if (focusingCount === 3) return 1.5;
+    return 2.0;
+  }
+
+  function calculateStreakPoints(minutesFocused, roomMultiplier = 1.0, streakBonus = 1.0) {
+    // Base: 1 point per minute
+    const basePoints = minutesFocused;
+    // Apply group multiplier (up to 2x for 4+ people)
+    const withGroupBonus = Math.round(basePoints * roomMultiplier);
+    // Apply streak bonus (increases with streak length)
+    const withStreakBonus = Math.round(withGroupBonus * streakBonus);
+    return withStreakBonus;
+  }
+
+  function getLeaderboard(limit = 10) {
+    const friends = getFriends();
+    if (!friends.length) return [];
+
+    return friends
+      .map(f => {
+        const streak = getCurrentStreak(); // In phase 4, would fetch friend's streak from Supabase
+        return {
+          email: f.friend_email,
+          currentStreak: streak.current || 0,
+          bestStreak: streak.best || 0,
+          rank: 0
+        };
+      })
+      .sort((a, b) => b.currentStreak - a.currentStreak)
+      .slice(0, limit)
+      .map((friend, index) => ({ ...friend, rank: index + 1 }));
+  }
+
+  function createChallenge(name, type, targetValue, durationDays, friendsList) {
+    if (!Auth || !Auth.current()) {
+      return { error: 'Not signed in' };
+    }
+
+    const challenge = {
+      id: Utils.id(),
+      creator_id: Auth.current().id,
+      name: name,
+      type: type, // 'streak' | 'focus_time' | 'sessions' | 'group_focus'
+      target_value: targetValue,
+      duration_days: durationDays,
+      friends: friendsList || [], // emails of invited friends
+      start_date: new Date().toISOString(),
+      end_date: new Date(Date.now() + durationDays * 86400000).toISOString(),
+      created_at: new Date().toISOString(),
+      participants: []
+    };
+
+    if (!state.challenges) state.challenges = [];
+    state.challenges.push(challenge);
+
+    Storage.update(s => {
+      if (!s.accountability) s.accountability = {};
+      if (!s.accountability.challenges) s.accountability.challenges = [];
+      s.accountability.challenges.push(challenge);
+    }, 'Created challenge');
+
+    return { success: true, challenge: challenge };
+  }
+
+  function joinChallenge(challengeId) {
+    if (!Auth || !Auth.current()) return false;
+
+    if (!state.challenges) return false;
+    const challenge = state.challenges.find(c => c.id === challengeId);
+    if (!challenge) return false;
+
+    const currentUser = Auth.current();
+    if (challenge.participants.find(p => p.user_id === currentUser.id)) {
+      return false; // Already joined
+    }
+
+    challenge.participants.push({
+      user_id: currentUser.id,
+      progress: 0,
+      completed: false,
+      completed_at: null
+    });
+
+    Storage.update(s => {
+      if (!s.accountability) s.accountability = {};
+      if (!s.accountability.challenges) s.accountability.challenges = [];
+      const existing = s.accountability.challenges.find(c => c.id === challengeId);
+      if (existing) {
+        existing.participants = challenge.participants;
+      }
+    }, 'Joined challenge');
+
+    return true;
+  }
+
+  function getChallenges() {
+    if (!state.challenges) return [];
+    const now = new Date();
+    return state.challenges.filter(c => new Date(c.end_date) > now);
+  }
+
+  function getActiveChallenges() {
+    const current = Auth.current();
+    if (!current) return [];
+
+    return getChallenges().filter(c =>
+      c.creator_id === current.id || c.participants.find(p => p.user_id === current.id)
+    );
+  }
+
+  function unlockAchievement(type, value) {
+    if (!Auth || !Auth.current()) return false;
+
+    const achievement = {
+      id: Utils.id(),
+      user_id: Auth.current().id,
+      type: type, // 'streak' | 'group_session' | 'focus_marathon' | 'challenge_win'
+      value: value,
+      unlocked_at: new Date().toISOString()
+    };
+
+    if (!state.unlockedAchievements) state.unlockedAchievements = [];
+    state.unlockedAchievements.push(achievement);
+
+    Storage.update(s => {
+      if (!s.accountability) s.accountability = {};
+      if (!s.accountability.unlockedAchievements) s.accountability.unlockedAchievements = [];
+      s.accountability.unlockedAchievements.push(achievement);
+    }, 'Unlocked achievement');
+
+    return true;
+  }
+
+  function getUnlockedAchievements() {
+    const current = Auth.current();
+    if (!current || !state.unlockedAchievements) return [];
+    return state.unlockedAchievements.filter(a => a.user_id === current.id);
+  }
+
+  function notifyFriendsOfAchievement(type, message) {
+    if (!Auth || !Auth.current()) return false;
+
+    const friends = getFriends();
+    friends.forEach(f => {
+      if (typeof Notifier !== 'undefined' && Notifier.notify) {
+        Notifier.notify({
+          icon: '🏆',
+          title: 'Friend achievement!',
+          body: message,
+          tag: 'achievement-' + Utils.id()
+        });
+      }
+    });
+
+    return true;
+  }
+
+  // =========================================================================
   // INITIALIZATION
   // =========================================================================
 
@@ -701,6 +895,18 @@ const Accountability = (() => {
     getRoomMessages,
     addEmojiReaction,
     getRoomReactions,
+    // Gamification (Phase 4)
+    getBadges,
+    getGroupMultiplier,
+    calculateStreakPoints,
+    getLeaderboard,
+    createChallenge,
+    joinChallenge,
+    getChallenges,
+    getActiveChallenges,
+    unlockAchievement,
+    getUnlockedAchievements,
+    notifyFriendsOfAchievement,
     // Settings
     getSettings,
     updateSettings,

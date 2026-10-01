@@ -1057,6 +1057,59 @@ const App = (() => {
  // My Streak Display
  setHtml('myStreakDisplay', renderStreakCard(streak));
 
+ // My Badges
+ const badges = Accountability.getBadges(streak);
+ if (badges.length > 0) {
+ const badgesHtml = badges.map(b =>
+ '<div class="badge" title="' + esc(b.desc) + '">' + b.name + '</div>'
+ ).join('');
+ setHtml('myBadges', '<div class="badges-row">' + badgesHtml + '</div>');
+ } else {
+ setHtml('myBadges', '<p class="card-note">Keep your streak going to earn badges! 🏆</p>');
+ }
+
+ // Leaderboard
+ const leaderboard = Accountability.getLeaderboard();
+ const leaderboardCard = $('leaderboardCard');
+ if (leaderboard.length > 0) {
+ if (leaderboardCard) leaderboardCard.style.display = '';
+ const leaderboardHtml = leaderboard.map((friend, idx) =>
+ '<div class="leaderboard-row">' +
+ '<span class="leaderboard-rank">#' + friend.rank + '</span>' +
+ '<div class="leaderboard-info">' +
+ '<strong>' + esc(friend.email.split('@')[0]) + '</strong>' +
+ '<span class="leaderboard-streak">' + friend.currentStreak + ' days</span>' +
+ '</div>' +
+ '<span class="leaderboard-best">' + friend.bestStreak + '🔥</span>' +
+ '</div>'
+ ).join('');
+ setHtml('leaderboardList', leaderboardHtml);
+ } else if (leaderboardCard) {
+ leaderboardCard.style.display = 'none';
+ }
+
+ // Active Challenges
+ const challenges = Accountability.getActiveChallenges();
+ const challengesCard = $('challengesCard');
+ if (challenges.length > 0) {
+ if (challengesCard) challengesCard.style.display = '';
+ const challengesHtml = challenges.map(c =>
+ '<div class="challenge-card">' +
+ '<div class="challenge-header">' +
+ '<strong>' + esc(c.name) + '</strong>' +
+ '<span class="challenge-time">⏱️ ' + Math.ceil((new Date(c.end_date) - new Date()) / 86400000) + ' days left</span>' +
+ '</div>' +
+ '<div class="challenge-progress">' +
+ '<span class="challenge-type">' + c.type + '</span>' +
+ '<span class="challenge-target">Target: ' + c.target_value + '</span>' +
+ '</div>' +
+ '</div>'
+ ).join('');
+ setHtml('challengesList', challengesHtml);
+ } else if (challengesCard) {
+ challengesCard.style.display = 'none';
+ }
+
  // Pending Invites Section
  const pendingCard = $('pendingCard');
  if (pendingInvites.length > 0) {
@@ -3567,6 +3620,72 @@ const App = (() => {
  setTimeout(() => App.renderAll(), 200);
  }
 
+ function createChallengeModal() {
+ if (!Accountability) return;
+
+ UI.modal({
+ title: 'Create a Challenge',
+ sub: 'Challenge your friends to compete',
+ bodyHtml: '<div class="field-grid">' +
+ '<label class="field">' +
+ '<span class="field-label">Challenge name</span>' +
+ '<input class="input" id="challengeName" type="text" placeholder="30-min focus race" />' +
+ '</label>' +
+ '<label class="field">' +
+ '<span class="field-label">Type</span>' +
+ '<select class="input" id="challengeType">' +
+ '<option value="focus_time">Focus time (minutes)</option>' +
+ '<option value="streak">Daily streak (days)</option>' +
+ '<option value="sessions">Sessions (count)</option>' +
+ '<option value="group_focus">Group focus (people)</option>' +
+ '</select>' +
+ '</label>' +
+ '<label class="field">' +
+ '<span class="field-label">Target value</span>' +
+ '<input class="input" id="challengeTarget" type="number" placeholder="30" min="1" />' +
+ '</label>' +
+ '<label class="field">' +
+ '<span class="field-label">Duration (days)</span>' +
+ '<input class="input" id="challengeDuration" type="number" placeholder="7" min="1" max="60" value="7" />' +
+ '</label>' +
+ '</div>',
+ actions: [
+ { label: 'Create', action: 'challenge-create-confirm', variant: 'primary' },
+ { label: 'Cancel', action: 'modal-cancel' }
+ ]
+ });
+ }
+
+ function confirmCreateChallenge() {
+ if (!Accountability) return;
+
+ const nameInput = $('challengeName');
+ const typeInput = $('challengeType');
+ const targetInput = $('challengeTarget');
+ const durationInput = $('challengeDuration');
+
+ if (!nameInput || !typeInput || !targetInput || !durationInput) return;
+
+ const name = nameInput.value.trim();
+ const type = typeInput.value;
+ const target = parseInt(targetInput.value) || 30;
+ const duration = parseInt(durationInput.value) || 7;
+
+ if (!name) {
+ UI.toast({ icon: 'alert', title: 'Name required' });
+ return;
+ }
+
+ const result = Accountability.createChallenge(name, type, target, duration);
+ if (result.error) {
+ UI.toast({ icon: 'alert', title: 'Error', body: result.error });
+ } else {
+ UI.closeModal();
+ UI.toast({ icon: 'check', title: 'Challenge created! 🏆', body: 'Invite friends to join.' });
+ setTimeout(() => App.renderAll(), 200);
+ }
+ }
+
  /* ==================== ♡ Accounts (sign in / out) ========================
     The account screens themselves live on their own pages — login.html and
     signup.html — so the app stays fast and the auth UI has room to breathe.
@@ -4142,6 +4261,9 @@ const App = (() => {
  case 'set-room-status-break':  setRoomStatus('on_break'); break;
  case 'set-room-status-idle':  setRoomStatus('idle'); break;
  case 'send-emoji-reaction':  sendEmojiReaction(target.getAttribute('data-emoji')); break;
+ /* --- gamification --- */
+ case 'create-challenge':  createChallengeModal(); break;
+ case 'challenge-create-confirm':  confirmCreateChallenge(); break;
 
  /* --- settings / data --- */
  case 'reset-confirm':  confirmReset(); break;

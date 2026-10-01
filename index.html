@@ -560,13 +560,14 @@
  </div>
  </div>
 
- <!-- My Streak Card -->
+ <!-- My Streak & Badges Card -->
  <div class="card card-primary">
  <div class="card-head">
- <h2 class="card-title">Your streak</h2>
- <span class="card-hint">Keep it going</span>
+ <h2 class="card-title">Your streak & badges</h2>
+ <span class="card-hint">Achievements unlock automatically</span>
  </div>
  <div class="streak-display" id="myStreakDisplay"></div>
+ <div id="myBadges" class="badges-display mt-12"></div>
  </div>
 
  <!-- Friend Discovery Section -->
@@ -637,6 +638,25 @@
  </div>
  <button class="btn btn-primary mt-12" data-action="create-focus-room" type="button">Create room & get code</button>
  <p class="card-hint mt-12" id="roomCreateStatus">—</p>
+ </div>
+
+ <!-- Leaderboard -->
+ <div class="card" id="leaderboardCard" style="display: none;">
+ <div class="card-head">
+ <h2 class="card-title">🏆 Friend Leaderboard</h2>
+ <span class="card-hint">Top streaks this week</span>
+ </div>
+ <div id="leaderboardList" class="leaderboard"></div>
+ </div>
+
+ <!-- Active Challenges -->
+ <div class="card" id="challengesCard" style="display: none;">
+ <div class="card-head">
+ <h2 class="card-title">⚡ Active Challenges</h2>
+ <span class="card-hint">Join and compete</span>
+ </div>
+ <div id="challengesList" class="challenges-list"></div>
+ <button class="btn btn-soft btn-small mt-12" data-action="create-challenge" type="button">Create a challenge</button>
  </div>
 
  <!-- Accountability Settings -->

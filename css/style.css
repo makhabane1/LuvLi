@@ -2269,6 +2269,117 @@ html[data-theme="dusk"] .ai-glyph { background: rgba(255,255,255,.12); border-co
   }
 }
 
+/* ========================= GAMIFICATION (Phase 4) ========================= */
+.badges-display {
+  padding: 12px;
+  background: var(--surface-2);
+  border-radius: var(--r-sm);
+}
+.badges-row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 12px;
+  background: linear-gradient(135deg, rgba(248, 200, 160, .3) 0%, rgba(220, 196, 248, .2) 100%);
+  border: 1px solid var(--hairline-2);
+  border-radius: var(--r-pill);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.2s var(--spring);
+}
+.badge:hover {
+  transform: scale(1.05);
+}
+
+.leaderboard {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.leaderboard-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  background: var(--surface-2);
+  border-radius: var(--r-sm);
+  border: 1px solid var(--hairline);
+}
+.leaderboard-rank {
+  font-weight: 700;
+  font-size: 16px;
+  color: var(--deep-rose);
+  min-width: 30px;
+}
+.leaderboard-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+}
+.leaderboard-info strong {
+  color: var(--ink);
+  font-size: 14px;
+}
+.leaderboard-streak {
+  font-size: 12px;
+  color: var(--muted);
+}
+.leaderboard-best {
+  font-size: 14px;
+  font-weight: 600;
+  color: #FF6B35;
+}
+
+.challenges-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+.challenge-card {
+  padding: 12px;
+  background: linear-gradient(135deg, rgba(93, 184, 138, .15) 0%, rgba(133, 194, 188, .1) 100%);
+  border: 1px solid var(--hairline-2);
+  border-radius: var(--r-sm);
+}
+.challenge-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+.challenge-header strong {
+  color: var(--ink);
+  font-size: 14px;
+}
+.challenge-time {
+  font-size: 12px;
+  color: var(--muted);
+}
+.challenge-progress {
+  display: flex;
+  gap: 8px;
+  font-size: 12px;
+}
+.challenge-type {
+  background: var(--surface-2);
+  padding: 4px 8px;
+  border-radius: 4px;
+  color: var(--text);
+  text-transform: capitalize;
+}
+.challenge-target {
+  color: var(--deep-rose);
+  font-weight: 600;
+}
+
 /* ============================ MICRO-INTERACTIONS ========================
    One consistent, quick, non-bouncy feel for anything interactive. */
 .chip-item, .theme-swatch, .chip, .icon-btn {
