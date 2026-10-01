@@ -4426,6 +4426,11 @@ const App = (() => {
  if (typeof SupabaseSync !== 'undefined') {
  SupabaseSync.init().then(() => { if (typeof LuvliPush !== 'undefined') LuvliPush.syncIfGranted(); });
  }
+ // Initialize shared accountability sync (friends, focus rooms, check-ins)
+ if (typeof AccountabilitySync !== 'undefined' && typeof window.supabaseClient !== 'undefined') {
+ AccountabilitySync.init(window.supabaseClient);
+ AccountabilitySync.startPolling(60000); // 60-second polling for real-time updates
+ }
 
  if (firstEverVisit) {
  setTimeout(() => UI.toast({
