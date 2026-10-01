@@ -619,6 +619,26 @@
  <div id="friendsList" class="friend-list"></div>
  </div>
 
+ <!-- Create Focus Room -->
+ <div class="card">
+ <div class="card-head">
+ <h2 class="card-title">Start a focus room</h2>
+ <span class="card-hint">Study together with friends</span>
+ </div>
+ <div class="field-grid">
+ <label class="field">
+ <span class="field-label">Room name</span>
+ <input class="input" id="roomNameInput" type="text" placeholder="Python study session" />
+ </label>
+ <label class="field">
+ <span class="field-label">Duration (minutes)</span>
+ <input class="input" id="roomDurationInput" type="number" placeholder="60" value="60" min="15" max="240" />
+ </label>
+ </div>
+ <button class="btn btn-primary mt-12" data-action="create-focus-room" type="button">Create room & get code</button>
+ <p class="card-hint mt-12" id="roomCreateStatus">—</p>
+ </div>
+
  <!-- Accountability Settings -->
  <div class="card">
  <div class="card-head">
@@ -634,6 +654,64 @@
  </span>
  </label>
  <p class="card-hint mt-12" id="sharingNote">Your daily focus time and task completions will be shared with accepted friends.</p>
+ </div>
+ </section>
+
+ <!-- ==================== FOCUS ROOM ==================== -->
+ <section class="view" id="view-focus-room" data-view="focus-room" style="display: none;">
+ <div class="section-head">
+ <div>
+ <h1 class="page-title" id="roomTitle">Focus Room</h1>
+ <p class="page-sub" id="roomCode">Code: —</p>
+ </div>
+ <button class="btn btn-soft btn-small" data-action="close-focus-room" type="button">Leave room</button>
+ </div>
+
+ <!-- Room Header -->
+ <div class="card card-primary">
+ <div class="card-head">
+ <h2 class="card-title">Who's focusing</h2>
+ <span class="card-hint" id="roomMemberCount">0 members</span>
+ </div>
+ <div id="roomMembersList" class="member-list"></div>
+ </div>
+
+ <!-- Room Stats -->
+ <div class="card">
+ <div class="card-head">
+ <h2 class="card-title">Room activity</h2>
+ <span class="card-hint" id="roomTimeRemaining">—</span>
+ </div>
+ <div class="stat-row" id="roomStats"></div>
+ </div>
+
+ <!-- My Status in Room -->
+ <div class="card">
+ <div class="card-head">
+ <h2 class="card-title">Your status</h2>
+ <span class="card-hint">Update your focus state</span>
+ </div>
+ <div class="row-gap row-wrap">
+ <button class="btn btn-primary" data-action="set-room-status-focusing" type="button">I'm focusing</button>
+ <button class="btn btn-soft" data-action="set-room-status-break" type="button">On a break</button>
+ <button class="btn btn-ghost" data-action="set-room-status-idle" type="button">Idle</button>
+ </div>
+ </div>
+
+ <!-- Join Room Section (shown when not in room) -->
+ <div class="card" id="joinRoomCard" style="display: none;">
+ <div class="card-head">
+ <h2 class="card-title">Join a focus room</h2>
+ <span class="card-hint">Study with friends in real-time</span>
+ </div>
+ <div class="field-grid">
+ <label class="field">
+ <span class="field-label">Room code</span>
+ <input class="input input-mono" id="focusRoomCodeInput" type="text" placeholder="ABC123" maxlength="6" />
+ </label>
+ </div>
+ <button class="btn btn-primary mt-12" data-action="join-focus-room" type="button">Join room</button>
+ <p class="card-hint mt-12" id="joinRoomStatus">—</p>
  </div>
  </section>
 

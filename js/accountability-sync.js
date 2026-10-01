@@ -84,6 +84,57 @@ const AccountabilitySync = (() => {
     }
   }
 
+  async function syncFocusRoom(room) {
+    if (!enabled()) return false;
+
+    try {
+      const { data, error } = await supabase
+        .from('focus_rooms')
+        .upsert({
+          id: room.id,
+          owner_id: room.owner_id,
+          name: room.name,
+          description: room.description || '',
+          room_code: room.room_code,
+          max_members: room.max_members,
+          is_active: room.is_active,
+          created_at: room.created_at,
+          ends_at: room.ends_at
+        }, { onConflict: 'id' });
+
+      if (error) console.error('Focus room sync error:', error);
+      return !error;
+    } catch (e) {
+      console.error('Focus room sync failed:', e);
+      return false;
+    }
+  }
+
+  async function syncRoomMember(roomId, member) {
+    if (!enabled()) return false;
+
+    try {
+      const { data, error } = await supabase
+        .from('room_members')
+        .upsert({
+          id: member.id,
+          room_id: roomId,
+          user_id: member.user_id,
+          status: member.status,
+          joined_at: member.joined_at,
+          left_at: member.left_at,
+          minutes_focused: member.minutes_focused || 0,
+          last_activity_at: member.last_activity_at || new Date().toISOString()
+        }, { onConflict: 'room_id,user_id' });
+
+      if (error) console.error('Room member sync error:', error);
+      return !error;
+    } catch (e) {
+      console.error('Room member sync failed:', e);
+      return false;
+    }
+  }
+
   // =========================================================================
   // FETCH FROM SUPABASE
   // =========================================================================
@@ -224,6 +275,8 @@ const AccountabilitySync = (() => {
     syncFriendship,
     syncStreak,
     syncSettings,
+    syncFocusRoom,
+    syncRoomMember,
     fetchFriends,
     fetchFriendStreaks,
     fetchPendingInvites,

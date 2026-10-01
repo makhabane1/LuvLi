@@ -254,6 +254,198 @@ const Accountability = (() => {
   }
 
   // =========================================================================
+  // FOCUS ROOMS (Phase 2)
+  // =========================================================================
+
+  function createFocusRoom(name, durationMinutes = 60) {
+    if (!Auth || !Auth.current()) {
+      return { error: 'Not signed in' };
+    }
+
+    const roomCode = generateInviteCode();
+    const currentUser = Auth.current();
+    const now = new Date();
+    const endTime = new Date(now.getTime() + durationMinutes * 60000);
+
+    const room = {
+      id: Utils.id(),
+      owner_id: currentUser.id,
+      name: name || 'Focus Room',
+      description: '',
+      room_code: roomCode,
+      max_members: 5,
+      is_active: true,
+      created_at: now.toISOString(),
+      ends_at: endTime.toISOString(),
+      members: []
+    };
+
+    state.focusRooms.push(room);
+    Storage.update(s => {
+      if (!s.accountability) s.accountability = {};
+      if (!s.accountability.focusRooms) s.accountability.focusRooms = [];
+      s.accountability.focusRooms.push(room);
+    }, 'Created focus room');
+
+    // Sync to Supabase
+    if (AccountabilitySync && AccountabilitySync.enabled()) {
+      AccountabilitySync.syncFocusRoom(room);
+    }
+
+    return { success: true, room: room, code: roomCode };
+  }
+
+  function joinFocusRoom(roomCode) {
+    if (!Auth || !Auth.current()) {
+      return { error: 'Not signed in' };
+    }
+
+    const room = state.focusRooms.find(r => r.room_code === roomCode.toUpperCase());
+    if (!room) {
+      return { error: 'Room not found' };
+    }
+    if (!room.is_active) {
+      return { error: 'This room is no longer active' };
+    }
+
+    const currentUser = Auth.current();
+    const existing = room.members.find(m => m.user_id === currentUser.id);
+    if (existing) {
+      return { success: true, room: room, joined: false, reason: 'Already in room' };
+    }
+
+    if (room.members.length >= room.max_members) {
+      return { error: 'Room is full' };
+    }
+
+    const member = {
+      id: Utils.id(),
+      user_id: currentUser.id,
+      status: 'idle', // 'focusing' | 'on_break' | 'idle' | 'left'
+      joined_at: new Date().toISOString(),
+      minutes_focused: 0
+    };
+
+    room.members.push(member);
+    Storage.update(s => {
+      if (!s.accountability) s.accountability = {};
+      const existing = s.accountability.focusRooms.find(r => r.id === room.id);
+      if (existing) {
+        existing.members = room.members;
+      }
+    }, 'Joined focus room');
+
+    // Sync to Supabase
+    if (AccountabilitySync && AccountabilitySync.enabled()) {
+      AccountabilitySync.syncRoomMember(room.id, member);
+    }
+
+    return { success: true, room: room, joined: true };
+  }
+
+  function getFocusRooms() {
+    return state.focusRooms.filter(r => r.is_active);
+  }
+
+  function getFocusRoom(roomCode) {
+    return state.focusRooms.find(r => r.room_code === roomCode.toUpperCase());
+  }
+
+  function updateRoomMemberStatus(roomCode, newStatus) {
+    if (!Auth || !Auth.current()) return false;
+
+    const room = getFocusRoom(roomCode);
+    if (!room) return false;
+
+    const currentUser = Auth.current();
+    const member = room.members.find(m => m.user_id === currentUser.id);
+    if (!member) return false;
+
+    member.status = newStatus;
+    member.last_activity_at = new Date().toISOString();
+
+    Storage.update(s => {
+      if (!s.accountability) s.accountability = {};
+      const existing = s.accountability.focusRooms.find(r => r.id === room.id);
+      if (existing) {
+        existing.members = room.members;
+      }
+    }, 'Updated room member status');
+
+    if (AccountabilitySync && AccountabilitySync.enabled()) {
+      AccountabilitySync.syncRoomMember(room.id, member);
+    }
+
+    return true;
+  }
+
+  function leaveFocusRoom(roomCode) {
+    const room = getFocusRoom(roomCode);
+    if (!room) return false;
+
+    const currentUser = Auth.current();
+    const memberIndex = room.members.findIndex(m => m.user_id === currentUser.id);
+    if (memberIndex === -1) return false;
+
+    room.members[memberIndex].status = 'left';
+    room.members[memberIndex].left_at = new Date().toISOString();
+
+    Storage.update(s => {
+      if (!s.accountability) s.accountability = {};
+      const existing = s.accountability.focusRooms.find(r => r.id === room.id);
+      if (existing) {
+        existing.members = room.members;
+      }
+    }, 'Left focus room');
+
+    if (AccountabilitySync && AccountabilitySync.enabled()) {
+      AccountabilitySync.syncRoomMember(room.id, room.members[memberIndex]);
+    }
+
+    return true;
+  }
+
+  function getRoomMembers(roomCode) {
+    const room = getFocusRoom(roomCode);
+    if (!room) return [];
+    return room.members.filter(m => m.status !== 'left');
+  }
+
+  function getRoomMemberStatus(roomCode) {
+    const room = getFocusRoom(roomCode);
+    if (!room) return {};
+
+    const stats = {
+      total: room.members.filter(m => m.status !== 'left').length,
+      focusing: room.members.filter(m => m.status === 'focusing').length,
+      on_break: room.members.filter(m => m.status === 'on_break').length,
+      idle: room.members.filter(m => m.status === 'idle').length
+    };
+
+    return stats;
+  }
+
+  function endFocusRoom(roomCode) {
+    const room = getFocusRoom(roomCode);
+    if (!room) return false;
+
+    room.is_active = false;
+    Storage.update(s => {
+      if (!s.accountability) s.accountability = {};
+      const existing = s.accountability.focusRooms.find(r => r.id === room.id);
+      if (existing) {
+        existing.is_active = false;
+      }
+    }, 'Ended focus room');
+
+    if (AccountabilitySync && AccountabilitySync.enabled()) {
+      AccountabilitySync.syncFocusRoom(room);
+    }
+
+    return true;
+  }
+
+  // =========================================================================
   // INITIALIZATION
   // =========================================================================
 
@@ -289,6 +481,16 @@ const Accountability = (() => {
     getStreakData,
     getCurrentStreak,
     getFriendStreaks,
+    // Focus Rooms (Phase 2)
+    createFocusRoom,
+    joinFocusRoom,
+    getFocusRooms,
+    getFocusRoom,
+    updateRoomMemberStatus,
+    leaveFocusRoom,
+    getRoomMembers,
+    getRoomMemberStatus,
+    endFocusRoom,
     // Settings
     getSettings,
     updateSettings,

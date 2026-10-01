@@ -2126,6 +2126,62 @@ html[data-theme="dusk"] .ai-glyph { background: rgba(255,255,255,.12); border-co
   border-color: var(--hairline-2);
 }
 
+.member-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.room-member {
+  padding: 12px;
+  background: var(--surface-2);
+  border-radius: var(--r-sm);
+  border: 1px solid var(--hairline);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.member-status {
+  font-size: 20px;
+  line-height: 1;
+}
+.member-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.member-info strong {
+  color: var(--ink);
+  font-size: 14px;
+}
+.member-status-text {
+  font-size: 12px;
+  color: var(--muted);
+  text-transform: capitalize;
+}
+
+.stat-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 12px;
+  background: var(--surface-2);
+  border-radius: var(--r-sm);
+  flex: 1;
+}
+.stat-label {
+  font-size: 12px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.stat-number {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--ink);
+  font-family: var(--font-display);
+}
+
 /* ============================ MICRO-INTERACTIONS ========================
    One consistent, quick, non-bouncy feel for anything interactive. */
 .chip-item, .theme-swatch, .chip, .icon-btn {

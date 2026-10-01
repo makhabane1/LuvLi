@@ -226,7 +226,7 @@ const App = (() => {
  { key: 'dusk',  label: 'Cozy dusk', colors: ['#35262F', '#E79FB8', '#FBD9E4'] }
  ];
 
- const view = { page: 'home', date: Utils.todayKey() };
+ const view = { page: 'home', date: Utils.todayKey(), focusRoomCode: null };
  let homeQuote = null;  // the affirmation on the Home card
  let pageQuote = null;  // the big affirmation on the Affirmations page
  let suggestions = [];  // cached "what should I do now?" answers
@@ -379,6 +379,7 @@ const App = (() => {
  case 'focus': Pomodoro.render(state()); break;
  case 'progress': renderProgressPage(); break;
  case 'friends': renderFriendsPage(); break;
+ case 'focus-room': renderFocusRoom(); break;
  case 'affirmations': renderAffirmations(); break;
  case 'settings': renderSettings(); break;
  default: renderHome();
@@ -557,6 +558,7 @@ const App = (() => {
  focus: () => Pomodoro.render(state()),
  progress: renderProgressPage,
  friends: renderFriendsPage,
+ 'focus-room': renderFocusRoom,
  affirmations: renderAffirmations,
  settings: renderSettings
  };
@@ -1119,6 +1121,74 @@ const App = (() => {
  '<span class="streak-label">Best</span>' +
  '</div>' +
  '</div>';
+ }
+
+ function renderFocusRoom() {
+ if (!Accountability || !view.focusRoomCode) {
+ // Show join room UI
+ const joinCard = $('joinRoomCard');
+ if (joinCard) joinCard.style.display = '';
+ const roomCard = $('view-focus-room');
+ if (roomCard) roomCard.style.display = 'none';
+ setText('roomTitle', 'Focus Rooms');
+ return;
+ }
+
+ const room = Accountability.getFocusRoom(view.focusRoomCode);
+ if (!room) {
+ view.focusRoomCode = null;
+ go('friends');
+ return;
+ }
+
+ // Room is active
+ const joinCard = $('joinRoomCard');
+ if (joinCard) joinCard.style.display = 'none';
+
+ setText('roomTitle', room.name);
+ setText('roomCode', 'Code: ' + room.room_code);
+
+ // Room members
+ const members = Accountability.getRoomMembers(room.room_code);
+ setText('roomMemberCount', members.length + ' member' + (members.length === 1 ? '' : 's'));
+
+ const membersHtml = members.map(m => {
+ const statusEmoji = {
+ 'focusing': '🎯',
+ 'on_break': '☕',
+ 'idle': '⏸️'
+ }[m.status] || '❓';
+ return '<div class="room-member">' +
+ '<span class="member-status">' + statusEmoji + '</span>' +
+ '<div class="member-info">' +
+ '<strong>Member ' + m.user_id.slice(0, 8) + '</strong>' +
+ '<span class="member-status-text">' + m.status.replace('_', ' ') + '</span>' +
+ '</div>' +
+ '</div>';
+ }).join('');
+ setHtml('roomMembersList', membersHtml || '<p class="card-note">No one else in this room yet.</p>');
+
+ // Room stats
+ const stats = Accountability.getRoomMemberStatus(room.room_code);
+ const statsHtml = '<div class="stat-item">' +
+ '<span class="stat-label">Focusing</span>' +
+ '<span class="stat-number">' + stats.focusing + '</span>' +
+ '</div>' +
+ '<div class="stat-item">' +
+ '<span class="stat-label">On break</span>' +
+ '<span class="stat-number">' + stats.on_break + '</span>' +
+ '</div>' +
+ '<div class="stat-item">' +
+ '<span class="stat-label">Total</span>' +
+ '<span class="stat-number">' + stats.total + '</span>' +
+ '</div>';
+ setHtml('roomStats', statsHtml);
+
+ // Time remaining
+ const endTime = new Date(room.ends_at);
+ const now = new Date();
+ const minutesLeft = Math.max(0, Math.floor((endTime - now) / 60000));
+ setText('roomTimeRemaining', minutesLeft + ' min remaining');
  }
 
  /* ------------------------------ AFFIRMATIONS ---------------------------- */
@@ -3396,6 +3466,71 @@ const App = (() => {
  UI.toast({ icon: 'lock', title: 'Sharing updated', body: msg });
  }
 
+ function createFocusRoom() {
+ if (!Accountability) return;
+ const nameInput = $('roomNameInput');
+ const durationInput = $('roomDurationInput');
+ const statusEl = $('roomCreateStatus');
+ if (!nameInput || !durationInput) return;
+
+ const name = nameInput.value.trim() || 'Focus Room';
+ const duration = Math.max(15, Math.min(240, parseInt(durationInput.value) || 60));
+
+ const result = Accountability.createFocusRoom(name, duration);
+ if (result.error) {
+ if (statusEl) setText('roomCreateStatus', result.error);
+ } else {
+ const code = result.code;
+ if (statusEl) setText('roomCreateStatus', 'Room created! Share code: ' + code);
+ setValue(nameInput, '');
+ setValue(durationInput, '60');
+
+ // Automatically open the room
+ view.focusRoomCode = code;
+ go('focus-room');
+ }
+ }
+
+ function joinFocusRoom() {
+ if (!Accountability) return;
+ const codeInput = $('focusRoomCodeInput');
+ const statusEl = $('joinRoomStatus');
+ if (!codeInput) return;
+
+ const code = codeInput.value.trim().toUpperCase();
+ if (!code) {
+ if (statusEl) setText('joinRoomStatus', 'Enter a room code');
+ return;
+ }
+
+ const result = Accountability.joinFocusRoom(code);
+ if (result.error) {
+ if (statusEl) setText('joinRoomStatus', result.error);
+ } else if (result.joined) {
+ if (statusEl) setText('joinRoomStatus', 'Joined! Now focusing together.');
+ setValue(codeInput, '');
+ view.focusRoomCode = code;
+ setTimeout(() => App.renderAll(), 200);
+ }
+ }
+
+ function leaveFocusRoom() {
+ if (!Accountability || !view.focusRoomCode) return;
+
+ Accountability.leaveFocusRoom(view.focusRoomCode);
+ view.focusRoomCode = null;
+ go('friends');
+ UI.toast({ icon: 'check', title: 'Left room' });
+ }
+
+ function setRoomStatus(newStatus) {
+ if (!Accountability || !view.focusRoomCode) return;
+
+ Accountability.updateRoomMemberStatus(view.focusRoomCode, newStatus);
+ Storage.update(() => {}, 'Updated room status');
+ setTimeout(() => App.renderAll(), 100);
+ }
+
  /* ==================== ♡ Accounts (sign in / out) ========================
     The account screens themselves live on their own pages — login.html and
     signup.html — so the app stays fast and the auth UI has room to breathe.
@@ -3963,6 +4098,13 @@ const App = (() => {
  case 'copy-invite-code':  copyInviteCode(target.getAttribute('data-code')); break;
  case 'block-friend':  blockFriend(target.getAttribute('data-email')); break;
  case 'toggle-sharing':  toggleAccountabilitySharing(); break;
+ /* --- focus rooms --- */
+ case 'create-focus-room':  createFocusRoom(); break;
+ case 'join-focus-room':  joinFocusRoom(); break;
+ case 'close-focus-room':  leaveFocusRoom(); break;
+ case 'set-room-status-focusing':  setRoomStatus('focusing'); break;
+ case 'set-room-status-break':  setRoomStatus('on_break'); break;
+ case 'set-room-status-idle':  setRoomStatus('idle'); break;
 
  /* --- settings / data --- */
  case 'reset-confirm':  confirmReset(); break;
