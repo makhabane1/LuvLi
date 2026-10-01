@@ -135,6 +135,32 @@ const AccountabilitySync = (() => {
     }
   }
 
+  async function syncCheckIn(checkIn) {
+    if (!enabled()) return false;
+
+    try {
+      const { error } = await supabase
+        .from('check_in_reminders')
+        .upsert({
+          id: checkIn.id,
+          room_id: checkIn.room_code,
+          creator_id: checkIn.creator_id,
+          recipient_id: checkIn.recipient_email, // placeholder: would be actual user_id
+          scheduled_for: checkIn.scheduled_for,
+          type: checkIn.type,
+          message: checkIn.message || '',
+          is_sent: checkIn.is_sent,
+          sent_at: checkIn.sent_at || null
+        }, { onConflict: 'id' });
+
+      if (error) console.error('Check-in sync error:', error);
+      return !error;
+    } catch (e) {
+      console.error('Check-in sync failed:', e);
+      return false;
+    }
+  }
+
   // =========================================================================
   // FETCH FROM SUPABASE
   // =========================================================================
@@ -277,6 +303,7 @@ const AccountabilitySync = (() => {
     syncSettings,
     syncFocusRoom,
     syncRoomMember,
+    syncCheckIn,
     fetchFriends,
     fetchFriendStreaks,
     fetchPendingInvites,

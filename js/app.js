@@ -1189,6 +1189,32 @@ const App = (() => {
  const now = new Date();
  const minutesLeft = Math.max(0, Math.floor((endTime - now) / 60000));
  setText('roomTimeRemaining', minutesLeft + ' min remaining');
+
+ // Achievements & celebrations
+ const achievements = Accountability.getRecentAchievements(room.room_code);
+ const celebrationsCard = $('celebrationsCard');
+ if (achievements && achievements.length > 0) {
+ if (celebrationsCard) celebrationsCard.style.display = '';
+ const celebrationsHtml = achievements.map(a => {
+ return '<div class="celebration-item">' +
+ '<span class="celebration-emoji">' + a.emoji + '</span>' +
+ '<div class="celebration-text">' +
+ '<strong>' + esc(a.recipient_email.split('@')[0]) + '</strong>' +
+ '<p>' + esc(a.message) + '</p>' +
+ '</div>' +
+ '</div>';
+ }).join('');
+ setHtml('roomCelebrations', celebrationsHtml);
+ } else if (celebrationsCard) {
+ celebrationsCard.style.display = 'none';
+ }
+
+ // Recent emoji reactions
+ const reactions = Accountability.getRoomReactions(room.room_code);
+ const reactionsHtml = reactions.length > 0
+ ? '<div class="reactions-stream">' + reactions.map(r => '<span class="reaction-bubble">' + r.emoji + '</span>').join('') + '</div>'
+ : '<p class="card-hint">Be the first to send encouragement!</p>';
+ setHtml('recentReactions', reactionsHtml);
  }
 
  /* ------------------------------ AFFIRMATIONS ---------------------------- */
@@ -3531,6 +3557,16 @@ const App = (() => {
  setTimeout(() => App.renderAll(), 100);
  }
 
+ function sendEmojiReaction(emoji) {
+ if (!Accountability || !view.focusRoomCode) return;
+
+ Accountability.addEmojiReaction(view.focusRoomCode, emoji);
+ UI.toast({ icon: 'heart', title: emoji, body: 'Sent!' });
+
+ // Show reaction briefly
+ setTimeout(() => App.renderAll(), 200);
+ }
+
  /* ==================== ♡ Accounts (sign in / out) ========================
     The account screens themselves live on their own pages — login.html and
     signup.html — so the app stays fast and the auth UI has room to breathe.
@@ -4105,6 +4141,7 @@ const App = (() => {
  case 'set-room-status-focusing':  setRoomStatus('focusing'); break;
  case 'set-room-status-break':  setRoomStatus('on_break'); break;
  case 'set-room-status-idle':  setRoomStatus('idle'); break;
+ case 'send-emoji-reaction':  sendEmojiReaction(target.getAttribute('data-emoji')); break;
 
  /* --- settings / data --- */
  case 'reset-confirm':  confirmReset(); break;

@@ -446,6 +446,205 @@ const Accountability = (() => {
   }
 
   // =========================================================================
+  // CHECK-INS & ACHIEVEMENTS (Phase 3)
+  // =========================================================================
+
+  function scheduleCheckIn(roomCode, recipientEmail, scheduledFor, type = 'buddy_check') {
+    if (!Auth || !Auth.current()) {
+      return { error: 'Not signed in' };
+    }
+
+    const room = getFocusRoom(roomCode);
+    if (!room) {
+      return { error: 'Room not found' };
+    }
+
+    const checkIn = {
+      id: Utils.id(),
+      room_code: roomCode,
+      creator_id: Auth.current().id,
+      recipient_email: recipientEmail.toLowerCase(),
+      scheduled_for: scheduledFor,
+      type: type, // 'buddy_check' | 'progress_share' | 'encouragement'
+      message: '',
+      is_sent: false,
+      created_at: new Date().toISOString()
+    };
+
+    if (!state.checkIns) state.checkIns = [];
+    state.checkIns.push(checkIn);
+
+    Storage.update(s => {
+      if (!s.accountability) s.accountability = {};
+      if (!s.accountability.checkIns) s.accountability.checkIns = [];
+      s.accountability.checkIns.push(checkIn);
+    }, 'Scheduled check-in');
+
+    if (AccountabilitySync && AccountabilitySync.enabled()) {
+      AccountabilitySync.syncCheckIn(checkIn);
+    }
+
+    return { success: true, checkIn: checkIn };
+  }
+
+  function getPendingCheckIns(roomCode) {
+    if (!state.checkIns) return [];
+    const now = new Date();
+    return state.checkIns.filter(c =>
+      c.room_code === roomCode &&
+      !c.is_sent &&
+      new Date(c.scheduled_for) <= now
+    );
+  }
+
+  function markCheckInSent(checkInId) {
+    if (!state.checkIns) return false;
+    const checkIn = state.checkIns.find(c => c.id === checkInId);
+    if (!checkIn) return false;
+
+    checkIn.is_sent = true;
+    checkIn.sent_at = new Date().toISOString();
+
+    Storage.update(s => {
+      if (!s.accountability) s.accountability = {};
+      if (!s.accountability.checkIns) s.accountability.checkIns = [];
+      const existing = s.accountability.checkIns.find(c => c.id === checkInId);
+      if (existing) {
+        existing.is_sent = true;
+        existing.sent_at = checkIn.sent_at;
+      }
+    }, 'Marked check-in as sent');
+
+    if (AccountabilitySync && AccountabilitySync.enabled()) {
+      AccountabilitySync.syncCheckIn(checkIn);
+    }
+
+    return true;
+  }
+
+  function createAchievement(roomCode, type, recipientEmail, message) {
+    if (!Auth || !Auth.current()) {
+      return { error: 'Not signed in' };
+    }
+
+    const achievement = {
+      id: Utils.id(),
+      room_code: roomCode,
+      type: type, // 'session_complete' | 'focus_streak' | 'group_win'
+      creator_id: Auth.current().id,
+      recipient_email: recipientEmail.toLowerCase(),
+      message: message || '',
+      emoji: getAchievementEmoji(type),
+      created_at: new Date().toISOString()
+    };
+
+    if (!state.achievements) state.achievements = [];
+    state.achievements.push(achievement);
+
+    Storage.update(s => {
+      if (!s.accountability) s.accountability = {};
+      if (!s.accountability.achievements) s.accountability.achievements = [];
+      s.accountability.achievements.push(achievement);
+    }, 'Achievement unlocked');
+
+    return { success: true, achievement: achievement };
+  }
+
+  function getAchievementEmoji(type) {
+    const emojis = {
+      'session_complete': '🎉',
+      'focus_streak': '🔥',
+      'group_win': '🏆',
+      'breakthrough': '💡',
+      'consistency': '⭐'
+    };
+    return emojis[type] || '✨';
+  }
+
+  function celebrateRoomMember(roomCode, memberEmail) {
+    return createAchievement(roomCode, 'session_complete', memberEmail,
+      'Just completed a focus session! 🎉');
+  }
+
+  function getRecentAchievements(roomCode, limit = 5) {
+    if (!state.achievements) return [];
+    return state.achievements
+      .filter(a => a.room_code === roomCode)
+      .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+      .slice(0, limit);
+  }
+
+  function sendRoomMessage(roomCode, text) {
+    if (!Auth || !Auth.current()) return false;
+
+    const room = getFocusRoom(roomCode);
+    if (!room) return false;
+
+    const message = {
+      id: Utils.id(),
+      room_code: roomCode,
+      sender_id: Auth.current().id,
+      text: text,
+      emoji_reaction: null,
+      created_at: new Date().toISOString()
+    };
+
+    if (!state.roomMessages) state.roomMessages = [];
+    state.roomMessages.push(message);
+
+    // Only keep recent messages to save space
+    if (state.roomMessages.length > 100) {
+      state.roomMessages = state.roomMessages.slice(-100);
+    }
+
+    Storage.update(s => {
+      if (!s.accountability) s.accountability = {};
+      if (!s.accountability.roomMessages) s.accountability.roomMessages = [];
+      s.accountability.roomMessages = state.roomMessages;
+    }, 'Room message');
+
+    return true;
+  }
+
+  function getRoomMessages(roomCode) {
+    if (!state.roomMessages) return [];
+    return state.roomMessages
+      .filter(m => m.room_code === roomCode)
+      .sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+  }
+
+  function addEmojiReaction(roomCode, text) {
+    if (!Auth || !Auth.current()) return false;
+
+    const reaction = {
+      id: Utils.id(),
+      room_code: roomCode,
+      user_id: Auth.current().id,
+      emoji: text,
+      created_at: new Date().toISOString()
+    };
+
+    if (!state.reactions) state.reactions = [];
+    state.reactions.push(reaction);
+
+    // Keep only recent reactions (last 60 seconds)
+    const oneMinuteAgo = new Date(Date.now() - 60000);
+    state.reactions = state.reactions.filter(r =>
+      r.room_code !== roomCode || new Date(r.created_at) > oneMinuteAgo
+    );
+
+    return true;
+  }
+
+  function getRoomReactions(roomCode) {
+    if (!state.reactions) return [];
+    const oneMinuteAgo = new Date(Date.now() - 60000);
+    return state.reactions
+      .filter(r => r.room_code === roomCode && new Date(r.created_at) > oneMinuteAgo)
+      .slice(-10); // Show last 10
+  }
+
+  // =========================================================================
   // INITIALIZATION
   // =========================================================================
 
@@ -491,6 +690,17 @@ const Accountability = (() => {
     getRoomMembers,
     getRoomMemberStatus,
     endFocusRoom,
+    // Check-Ins & Achievements (Phase 3)
+    scheduleCheckIn,
+    getPendingCheckIns,
+    markCheckInSent,
+    createAchievement,
+    celebrateRoomMember,
+    getRecentAchievements,
+    sendRoomMessage,
+    getRoomMessages,
+    addEmojiReaction,
+    getRoomReactions,
     // Settings
     getSettings,
     updateSettings,

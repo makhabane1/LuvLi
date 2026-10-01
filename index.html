@@ -685,6 +685,15 @@
  <div class="stat-row" id="roomStats"></div>
  </div>
 
+ <!-- Room Celebrations -->
+ <div class="card card-soft" id="celebrationsCard" style="display: none;">
+ <div class="card-head">
+ <h2 class="card-title">✨ Wins</h2>
+ <span class="card-hint">Celebrating together</span>
+ </div>
+ <div id="roomCelebrations" class="celebration-feed"></div>
+ </div>
+
  <!-- My Status in Room -->
  <div class="card">
  <div class="card-head">
@@ -696,6 +705,21 @@
  <button class="btn btn-soft" data-action="set-room-status-break" type="button">On a break</button>
  <button class="btn btn-ghost" data-action="set-room-status-idle" type="button">Idle</button>
  </div>
+ </div>
+
+ <!-- Emoji Reactions -->
+ <div class="card">
+ <div class="card-head">
+ <h2 class="card-title">Encourage your buddies</h2>
+ <span class="card-hint">Send a quick reaction</span>
+ </div>
+ <div class="row-gap row-wrap">
+ <button class="btn btn-soft" data-action="send-emoji-reaction" data-emoji="🔥" type="button">🔥 Fire</button>
+ <button class="btn btn-soft" data-action="send-emoji-reaction" data-emoji="✨" type="button">✨ Amazing</button>
+ <button class="btn btn-soft" data-action="send-emoji-reaction" data-emoji="💪" type="button">💪 Strong</button>
+ <button class="btn btn-soft" data-action="send-emoji-reaction" data-emoji="🎉" type="button">🎉 Yay</button>
+ </div>
+ <div id="recentReactions" class="reactions-display mt-12"></div>
  </div>
 
  <!-- Join Room Section (shown when not in room) -->

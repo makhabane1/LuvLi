@@ -2182,6 +2182,93 @@ html[data-theme="dusk"] .ai-glyph { background: rgba(255,255,255,.12); border-co
   font-family: var(--font-display);
 }
 
+.celebration-feed {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.celebration-item {
+  padding: 12px;
+  background: linear-gradient(135deg, rgba(248, 200, 160, .2) 0%, rgba(242, 169, 192, .15) 100%);
+  border-radius: var(--r-sm);
+  border: 1px solid var(--hairline-2);
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  animation: slideIn 0.4s var(--ease);
+}
+.celebration-emoji {
+  font-size: 24px;
+  line-height: 1;
+  flex-shrink: 0;
+}
+.celebration-text {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.celebration-text strong {
+  color: var(--ink);
+  font-size: 14px;
+}
+.celebration-text p {
+  font-size: 13px;
+  color: var(--text);
+  margin: 0;
+}
+
+.reactions-display {
+  padding: 12px;
+  background: var(--surface-2);
+  border-radius: var(--r-sm);
+  min-height: 40px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+.reactions-stream {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.reaction-bubble {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  background: var(--surface-3);
+  border-radius: var(--r-pill);
+  font-size: 18px;
+  animation: pop 0.5s var(--ease);
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes pop {
+  0% {
+    transform: scale(0.5);
+    opacity: 0;
+  }
+  70% {
+    transform: scale(1.1);
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
 /* ============================ MICRO-INTERACTIONS ========================
    One consistent, quick, non-bouncy feel for anything interactive. */
 .chip-item, .theme-swatch, .chip, .icon-btn {
