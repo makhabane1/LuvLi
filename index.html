@@ -70,6 +70,7 @@
  <button class="nav-item" data-page="study" type="button"><span class="nav-ico" data-ico="book"></span><span class="nav-label">Study</span></button>
  <button class="nav-item" data-page="focus" type="button"><span class="nav-ico" data-ico="sparkles"></span><span class="nav-label">Focus</span></button>
  <button class="nav-item" data-page="progress" type="button"><span class="nav-ico" data-ico="chart"></span><span class="nav-label">Progress</span></button>
+ <button class="nav-item" data-page="friends" type="button"><span class="nav-ico" data-ico="people"></span><span class="nav-label">Friends</span></button>
  <button class="nav-item" data-page="affirmations" type="button"><span class="nav-ico" data-ico="heart"></span><span class="nav-label">Affirmations</span></button>
  <button class="nav-item" data-page="settings" type="button"><span class="nav-ico" data-ico="settings"></span><span class="nav-label">Settings</span></button>
  </nav>
@@ -550,6 +551,92 @@
  </div>
  </section>
 
+ <!-- ==================== FRIENDS & STREAKS ==================== -->
+ <section class="view" id="view-friends" data-view="friends">
+ <div class="section-head">
+ <div>
+ <h1 class="page-title">Friends & Streaks</h1>
+ <p class="page-sub">Study together, grow together.</p>
+ </div>
+ </div>
+
+ <!-- My Streak Card -->
+ <div class="card card-primary">
+ <div class="card-head">
+ <h2 class="card-title">Your streak</h2>
+ <span class="card-hint">Keep it going</span>
+ </div>
+ <div class="streak-display" id="myStreakDisplay"></div>
+ </div>
+
+ <!-- Friend Discovery Section -->
+ <div class="card">
+ <div class="card-head">
+ <h2 class="card-title">Find a study buddy</h2>
+ <span class="card-hint">Invite by email</span>
+ </div>
+ <div class="field-grid">
+ <label class="field">
+ <span class="field-label">Friend's email</span>
+ <input class="input" id="friendEmailInput" type="email" placeholder="study.buddy@example.com" />
+ </label>
+ </div>
+ <button class="btn btn-primary mt-12" data-action="send-invite" type="button">Send invite</button>
+ <p class="card-hint mt-12" id="inviteStatus">—</p>
+ </div>
+
+ <!-- Join with Code Section -->
+ <div class="card">
+ <div class="card-head">
+ <h2 class="card-title">Join by code</h2>
+ <span class="card-hint">Get a 6-letter code from a friend</span>
+ </div>
+ <div class="field-grid">
+ <label class="field">
+ <span class="field-label">Invite code</span>
+ <input class="input input-mono" id="joinCodeInput" type="text" placeholder="ABC123" maxlength="6" />
+ </label>
+ </div>
+ <button class="btn btn-soft mt-12" data-action="join-by-code" type="button">Join by code</button>
+ <p class="card-hint mt-12" id="joinStatus">—</p>
+ </div>
+
+ <!-- Pending Invites -->
+ <div class="card" id="pendingCard" style="display: none;">
+ <div class="card-head">
+ <h2 class="card-title">Invites waiting for you</h2>
+ <span class="card-hint">Accept to connect</span>
+ </div>
+ <div id="pendingInvitesList"></div>
+ </div>
+
+ <!-- Friends List with Streaks -->
+ <div class="card" id="friendsCard" style="display: none;">
+ <div class="card-head">
+ <h2 class="card-title">Your study buddies</h2>
+ <span class="card-hint" id="friendsCount">0 friends</span>
+ </div>
+ <div id="friendsList" class="friend-list"></div>
+ </div>
+
+ <!-- Accountability Settings -->
+ <div class="card">
+ <div class="card-head">
+ <h2 class="card-title">Sharing & privacy</h2>
+ <span class="card-hint">What friends can see</span>
+ </div>
+ <label class="switch">
+ <input type="checkbox" id="sharingToggle" data-action="toggle-sharing" />
+ <span class="switch-track"></span>
+ <span>
+ <span class="switch-label">Share my streak with friends</span>
+ <span class="switch-sub">Friends see your daily activity and progress</span>
+ </span>
+ </label>
+ <p class="card-hint mt-12" id="sharingNote">Your daily focus time and task completions will be shared with accepted friends.</p>
+ </div>
+ </section>
+
  <!-- ==================== AFFIRMATIONS ==================== -->
  <section class="view" id="view-affirmations" data-view="affirmations">
  <div class="section-head">
@@ -968,6 +1055,9 @@
  <script src="js/notifications.js"></script>
  <script src="js/sync.js"></script>
  <script src="js/ics-export.js"></script>
+ <!-- Phase 6: Shared accountability (friends, streaks, focus rooms) -->
+ <script src="js/accountability.js"></script>
+ <script src="js/accountability-sync.js"></script>
  <script src="js/app.js"></script>
 </body>
 </html>

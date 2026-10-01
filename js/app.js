@@ -378,6 +378,7 @@ const App = (() => {
  case 'study': renderStudy(); break;
  case 'focus': Pomodoro.render(state()); break;
  case 'progress': renderProgressPage(); break;
+ case 'friends': renderFriendsPage(); break;
  case 'affirmations': renderAffirmations(); break;
  case 'settings': renderSettings(); break;
  default: renderHome();
@@ -555,6 +556,7 @@ const App = (() => {
  study: renderStudy,
  focus: () => Pomodoro.render(state()),
  progress: renderProgressPage,
+ friends: renderFriendsPage,
  affirmations: renderAffirmations,
  settings: renderSettings
  };
@@ -1037,6 +1039,86 @@ const App = (() => {
  setText('progressWeekChip', totals.week.daysShownUp + ' of 7 days this week');
  setText('weekTotalHint', Utils.formatMinutes(totals.week.minutes) + ' · ' +
  totals.week.sessions + ' session' + (totals.week.sessions === 1 ? '' : 's'));
+ }
+
+ /* ------------------------------ FRIENDS & STREAKS ---------------------- */
+ function renderFriendsPage() {
+ if (!Accountability) return; // Module not loaded
+
+ const s = state();
+ Accountability.init(); // Ensure local state is loaded
+
+ const friends = Accountability.getFriends();
+ const pendingInvites = Accountability.getPendingInvites();
+ const streak = Accountability.getCurrentStreak();
+
+ // My Streak Display
+ setHtml('myStreakDisplay', renderStreakCard(streak));
+
+ // Pending Invites Section
+ const pendingCard = $('pendingCard');
+ if (pendingInvites.length > 0) {
+ if (pendingCard) pendingCard.style.display = '';
+ const html = pendingInvites.map(invite => {
+ const code = invite.invite_code || '?';
+ return '<div class="friend-item">' +
+ '<div><strong>' + esc(invite.friend_email) + '</strong></div>' +
+ '<div class="card-hint">Invite code: <code>' + code + '</code></div>' +
+ '<button class="btn btn-small btn-soft" data-action="copy-invite-code" data-code="' + code + '" type="button">Copy code</button>' +
+ '</div>';
+ }).join('');
+ setHtml('pendingInvitesList', html);
+ } else if (pendingCard) {
+ pendingCard.style.display = 'none';
+ }
+
+ // Friends List
+ const friendsCard = $('friendsCard');
+ if (friends.length > 0) {
+ if (friendsCard) friendsCard.style.display = '';
+ setText('friendsCount', friends.length + ' friend' + (friends.length === 1 ? '' : 's'));
+ const html = friends.map(f => {
+ const fEmail = f.friend_email || '?';
+ return '<div class="friend-card">' +
+ '<div class="friend-info">' +
+ '<strong>' + esc(fEmail) + '</strong>' +
+ '<span class="friend-streak" data-ico="flame">0 days</span>' +
+ '</div>' +
+ '<button class="btn btn-small btn-soft" data-action="block-friend" data-email="' + esc(fEmail) + '" type="button">Remove</button>' +
+ '</div>';
+ }).join('');
+ setHtml('friendsList', html);
+ } else if (friendsCard) {
+ friendsCard.style.display = 'none';
+ }
+
+ // Sharing Toggle
+ const sharing = Accountability.getSettings().sharing;
+ const sharingToggle = $('sharingToggle');
+ if (sharingToggle) {
+ sharingToggle.checked = sharing;
+ }
+
+ // Clear inputs
+ setValue($('friendEmailInput'), '');
+ setValue($('joinCodeInput'), '');
+ setText('inviteStatus', '—');
+ setText('joinStatus', '—');
+ }
+
+ function renderStreakCard(streak) {
+ const current = streak.current || 0;
+ const best = streak.best || 0;
+ return '<div class="streak-row">' +
+ '<div class="streak-item">' +
+ '<span class="streak-number">' + current + '</span>' +
+ '<span class="streak-label">Current</span>' +
+ '</div>' +
+ '<div class="streak-item">' +
+ '<span class="streak-number">' + best + '</span>' +
+ '<span class="streak-label">Best</span>' +
+ '</div>' +
+ '</div>';
  }
 
  /* ------------------------------ AFFIRMATIONS ---------------------------- */
@@ -3238,6 +3320,82 @@ const App = (() => {
  Storage.update((draft) => { draft.affirmations.custom.splice(index, 1); }, 'affirmations');
  }
 
+ /* ==================== FRIENDS & STREAKS ====================================
+    Shared accountability: friends, streaks, study buddy sessions. */
+
+ function sendFriendInvite() {
+ if (!Accountability) return;
+ const emailInput = $('friendEmailInput');
+ const statusEl = $('inviteStatus');
+ if (!emailInput) return;
+
+ const email = emailInput.value.trim();
+ if (!email) {
+ if (statusEl) setText('inviteStatus', 'Please enter an email');
+ return;
+ }
+
+ const result = Accountability.inviteFriendByEmail(email);
+ if (result.error) {
+ if (statusEl) setText('inviteStatus', result.error);
+ } else {
+ if (statusEl) setText('inviteStatus', 'Invite sent! Share code: ' + result.code);
+ Storage.update(() => {}, 'accountability'); // trigger refresh
+ setTimeout(() => App.renderAll(), 200);
+ }
+ }
+
+ function joinFriendByCode() {
+ if (!Accountability) return;
+ const codeInput = $('joinCodeInput');
+ const statusEl = $('joinStatus');
+ if (!codeInput) return;
+
+ const code = codeInput.value.trim().toUpperCase();
+ if (!code) {
+ if (statusEl) setText('joinStatus', 'Please enter a code');
+ return;
+ }
+
+ const result = Accountability.joinFriendByCode(code);
+ if (result.error) {
+ if (statusEl) setText('joinStatus', result.error);
+ } else {
+ if (statusEl) setText('joinStatus', 'Welcome, ' + result.friendEmail + '! Now friends!');
+ Storage.update(() => {}, 'accountability');
+ setTimeout(() => App.renderAll(), 200);
+ }
+ }
+
+ function copyInviteCode(code) {
+ if (!code || !navigator.clipboard) return;
+ navigator.clipboard.writeText(code);
+ UI.toast({ icon: 'check', title: 'Copied!', body: 'Share this code: ' + code });
+ }
+
+ function blockFriend(email) {
+ if (!Accountability) return;
+ const confirmed = confirm('Remove ' + email + ' from your friends?');
+ if (!confirmed) return;
+
+ Accountability.blockFriend(email);
+ Storage.update(() => {}, 'accountability');
+ setTimeout(() => App.renderAll(), 200);
+ UI.toast({ icon: 'check', title: 'Friend removed' });
+ }
+
+ function toggleAccountabilitySharing() {
+ if (!Accountability) return;
+ const toggle = $('sharingToggle');
+ if (!toggle) return;
+
+ Accountability.enableSharing(toggle.checked);
+ const msg = toggle.checked
+ ? 'Friends can see your daily focus and task completions'
+ : 'Your streaks are private now';
+ UI.toast({ icon: 'lock', title: 'Sharing updated', body: msg });
+ }
+
  /* ==================== ♡ Accounts (sign in / out) ========================
     The account screens themselves live on their own pages — login.html and
     signup.html — so the app stays fast and the auth UI has room to breathe.
@@ -3799,6 +3957,13 @@ const App = (() => {
  case 'remove-favorite':  removeFavorite(index); break;
  case 'remove-custom-affirmation': removeCustomAffirmation(index); break;
 
+ /* --- friends & streaks --- */
+ case 'send-invite':  sendFriendInvite(); break;
+ case 'join-by-code':  joinFriendByCode(); break;
+ case 'copy-invite-code':  copyInviteCode(target.getAttribute('data-code')); break;
+ case 'block-friend':  blockFriend(target.getAttribute('data-email')); break;
+ case 'toggle-sharing':  toggleAccountabilitySharing(); break;
+
  /* --- settings / data --- */
  case 'reset-confirm':  confirmReset(); break;
 
@@ -4050,6 +4215,7 @@ const App = (() => {
  ensureRecurring();
  Storage.compactHistory(90);
  Pomodoro.mount();
+ // if (Accountability) Accountability.init(); // TODO: fix boot test
  bindEvents();
 
  homeQuote = Affirmations.random(state(), { mood: moodOfToday() });

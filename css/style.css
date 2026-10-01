@@ -2018,6 +2018,11 @@ html[data-theme="dusk"] .ai-glyph { background: rgba(255,255,255,.12); border-co
   background: var(--glass-3);
   outline: none;
 }
+.input-mono {
+  font-family: 'SF Mono', Monaco, 'Courier New', monospace;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
 
 /* ======================== NAVIGATION / CHROME ============================ */
 .sidebar, .topbar, .bottom-nav {
@@ -2035,6 +2040,91 @@ html[data-theme="dusk"] .ai-glyph { background: rgba(255,255,255,.12); border-co
 /* ===================== PROGRESS / RINGS / INDICATORS ===================== */
 /* A subtle glow on the big rings and numbers, so progress reads as light. */
 .ring-glow { filter: drop-shadow(0 4px 14px rgba(242, 169, 192, .4)); }
+
+/* ========================== FRIENDS & STREAKS ============================= */
+.streak-display {
+  display: flex;
+  gap: 24px;
+  padding: 20px;
+  background: var(--surface-2);
+  border-radius: var(--r-sm);
+  margin: 16px 0;
+}
+.streak-row {
+  display: flex;
+  gap: 24px;
+  padding: 20px;
+  background: var(--surface-2);
+  border-radius: var(--r-sm);
+  width: 100%;
+}
+.streak-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex: 1;
+}
+.streak-number {
+  font-size: 32px;
+  font-weight: 700;
+  color: var(--ink);
+  font-family: var(--font-display);
+  line-height: 1;
+  margin-bottom: 8px;
+}
+.streak-label {
+  font-size: 13px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.friend-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.friend-item, .friend-card {
+  padding: 16px;
+  background: var(--surface-2);
+  border-radius: var(--r-sm);
+  border: 1px solid var(--hairline);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.friend-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+}
+.friend-info strong {
+  color: var(--ink);
+  font-size: 15px;
+}
+.friend-streak {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--muted);
+}
+.friend-streak::before {
+  content: '';
+  display: inline-block;
+  width: 20px;
+  height: 20px;
+  background: var(--surface-3);
+  border-radius: 4px;
+  font-size: 12px;
+  color: #FF6B35;
+}
+
+.card-primary {
+  background: linear-gradient(135deg, rgba(242, 169, 192, .15) 0%, rgba(220, 196, 248, .1) 100%);
+  border-color: var(--hairline-2);
+}
 
 /* ============================ MICRO-INTERACTIONS ========================
    One consistent, quick, non-bouncy feel for anything interactive. */
