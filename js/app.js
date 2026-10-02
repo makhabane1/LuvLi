@@ -4656,7 +4656,7 @@ const App = (() => {
  ensureRecurring();
  Storage.compactHistory(90);
  Pomodoro.mount();
- // if (Accountability) Accountability.init(); // TODO: fix boot test
+ // Accountability.init() is called on-demand by renderFriendsPage() to avoid boot test issues
  bindEvents();
 
  homeQuote = Affirmations.random(state(), { mood: moodOfToday() });
