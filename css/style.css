@@ -2675,6 +2675,43 @@ html.reduce-motion .card:hover, html.reduce-motion .btn-primary:hover { transfor
 }
 
 @media (max-width: 600px) {
+  /* --- Mobile Navigation & Touch Targets --- */
+  .bn-item {
+    flex: 1 0 56px;
+    min-height: 48px;
+    padding: 6px 4px;
+  }
+
+  .btn {
+    min-height: 48px;
+    padding: 12px 16px;
+    font-size: 16px;
+  }
+
+  .btn-small {
+    min-height: 40px;
+  }
+
+  /* --- Mobile Page Layout --- */
+  .page-title {
+    font-size: 22px;
+  }
+
+  .card {
+    margin-bottom: 16px;
+  }
+
+  /* --- Study Mode Mobile --- */
+  .ss-header {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .subject-card {
+    flex-direction: column;
+  }
+
+  /* --- Modal Mobile --- */
   .onboarding-card {
     padding: 28px 20px;
   }
@@ -2685,5 +2722,16 @@ html.reduce-motion .card:hover, html.reduce-motion .btn-primary:hover { transfor
 
   .onboarding-description {
     font-size: 14px;
+  }
+
+  /* --- Input Fields Mobile --- */
+  .input {
+    min-height: 44px;
+    font-size: 16px;
+  }
+
+  /* --- Bottom padding for nav overlay --- */
+  main {
+    padding-bottom: 120px;
   }
 }

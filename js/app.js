@@ -4482,6 +4482,8 @@ const App = (() => {
  const button = event.target.closest ? event.target.closest('[data-page]') : null;
  if (!button) return;
  if (button.classList.contains('nav-item') || button.classList.contains('bn-item')) {
+ // Close any open modal before navigating
+ if (UI && UI.closeModal) UI.closeModal();
  go(button.getAttribute('data-page'));
  }
  });
