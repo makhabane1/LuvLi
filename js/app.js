@@ -260,8 +260,23 @@ const App = (() => {
  }
 
  function applyDarkMode() {
- const isDarkMode = state().settings.darkMode || false;
- document.documentElement.classList.toggle('dark-mode', isDarkMode);
+ const settings = state().settings;
+ let isDarkMode = settings.darkMode;
+
+ // First visit: detect system preference if user hasn't set one explicitly
+ if (isDarkMode === undefined || isDarkMode === null) {
+ isDarkMode = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+ }
+
+ document.documentElement.classList.toggle('dark-mode', Boolean(isDarkMode));
+ }
+
+ function detectAndSaveDarkModePreference() {
+ const settings = state().settings;
+ if (settings.darkMode === undefined || settings.darkMode === null) {
+ const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+ Storage.update(s => { s.settings.darkMode = prefersDark; }, 'dark mode auto-detected');
+ }
  }
 
  function buildNav() {
@@ -4552,8 +4567,23 @@ const App = (() => {
  Sync.init();
  Storage.subscribe((snapshot, reason) => refresh(reason));
 
+ // Detect and save system dark mode preference on first visit
+ detectAndSaveDarkModePreference();
+
+ // Listen for system theme changes (when user changes OS dark mode setting)
+ if (window.matchMedia) {
+ const darkModeQuery = window.matchMedia('(prefers-color-scheme: dark)');
+ darkModeQuery.addEventListener('change', (e) => {
+ const settings = state().settings;
+ if (settings.darkMode === undefined || settings.darkMode === null) {
+ Storage.update(s => { s.settings.darkMode = e.matches; });
+ document.documentElement.classList.toggle('dark-mode', e.matches);
+ }
+ });
+ }
+
  // A fresh quote in the sidebar every few minutes
- setInterval(() => setText('sideQuote', '“' + Affirmations.random(state(), {}).text + '”'), 300000);
+ setInterval(() => setText('sideQuote', '”' + Affirmations.random(state(), {}).text + '”'), 300000);
 
  /* ♡ The route guard. Nobody uses Luvli until they have signed in — and a
     returning person with a remembered session goes straight through. The
