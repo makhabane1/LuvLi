@@ -17,6 +17,7 @@
     "start": "npx --yes http-server . -p 8080 -c-1",
     "dev": "node tools/dev-server.js",
     "setup": "node tools/setup.js",
+    "setup:db": "node tools/run-migrations.js",
     "check": "node tools/check-static.js && node tools/check-css.js",
     "test": "npm run test:logic && npm run test:account && npm run test:interaction && npm run test:personality",
     "test:logic": "node tools/smoke-test.js",
