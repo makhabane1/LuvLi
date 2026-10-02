@@ -192,6 +192,8 @@ const App = (() => {
  { page: 'study',  icon: 'book', label: 'Study' },
  { page: 'focus',  icon: 'sparkles', label: 'Focus' },
  { page: 'progress',  icon: 'chart', label: 'Progress' },
+ { page: 'friends',  icon: 'users', label: 'Friends' },
+ { page: 'focus-room',  icon: 'users', label: 'Focus Room' },
  { page: 'affirmations', icon: 'heart', label: 'Affirm.' },
  { page: 'settings',  icon: 'settings', label: 'Settings' }
  ];
@@ -219,10 +221,15 @@ const App = (() => {
  ];
 
  const THEMES = [
- { key: 'rose',  label: 'Rose',  colors: ['#FCE7F0', '#EFA8BF', '#9E536F'] },
+ { key: 'rose',  label: 'Rose',  colors: ['#FAFBFC', '#8B9FB8', '#5B6B7F'] },
  { key: 'lavender', label: 'Lavender', colors: ['#EFE9FF', '#B9A6E8', '#634F8C'] },
  { key: 'peach',  label: 'Peach',  colors: ['#FFEADC', '#F0A57E', '#934F31'] },
  { key: 'sage',  label: 'Sage',  colors: ['#E5F3EB', '#8FC9AC', '#38664D'] },
+ { key: 'ocean',  label: 'Ocean',  colors: ['#E8F3F9', '#7ABDD0', '#2B5F7F'] },
+ { key: 'slate',  label: 'Slate',  colors: ['#F0F2F5', '#7A8FA3', '#3D4A5C'] },
+ { key: 'midnight', label: 'Midnight', colors: ['#1A2A3F', '#5B8BB8', '#8BA8D0'] },
+ { key: 'charcoal', label: 'Charcoal', colors: ['#242A31', '#6B8FA3', '#8BA0B8'] },
+ { key: 'forest',  label: 'Forest',  colors: ['#1F2A25', '#5BA890', '#7BA878'] },
  { key: 'dusk',  label: 'Cozy dusk', colors: ['#35262F', '#E79FB8', '#FBD9E4'] }
  ];
 
@@ -239,7 +246,7 @@ const App = (() => {
  /* -------------------------- chrome & navigation ------------------------- */
  /** Matches <meta name="theme-color"> to the theme, so the browser chrome blends. */
  const THEME_BG = {
- rose: '#FFF5F8', lavender: '#F9F7FF', peach: '#FFF8F3', sage: '#F6FBF8', dusk: '#1A1418'
+ rose: '#FAFBFC', lavender: '#F9F7FF', peach: '#FFF8F3', sage: '#F6FBF8', ocean: '#F0F8FC', slate: '#F5F7FA', midnight: '#1A2A3F', charcoal: '#242A31', forest: '#1F2A25', dusk: '#1A1418'
  };
 
  function applyTheme() {
@@ -247,8 +254,14 @@ const App = (() => {
  const name = settings.theme || 'rose';
  document.documentElement.setAttribute('data-theme', name);
  document.documentElement.classList.toggle('reduce-motion', Boolean(settings.reduceMotion));
+ applyDarkMode();
  const meta = document.querySelector('meta[name="theme-color"]');
  if (meta) meta.setAttribute('content', THEME_BG[name] || THEME_BG.rose);
+ }
+
+ function applyDarkMode() {
+ const isDarkMode = state().settings.darkMode || false;
+ document.documentElement.classList.toggle('dark-mode', isDarkMode);
  }
 
  function buildNav() {
@@ -1382,6 +1395,7 @@ const App = (() => {
  checked('setProtectBreaks', settings.protectBreaks);
  checked('setAutoOptimize', settings.autoOptimize);
  checked('setAffFocus', settings.affirmations.duringFocus);
+ checked('setDarkMode', settings.darkMode);
  checked('setReduceMotion', settings.reduceMotion);
  checked('setFocusFullscreen', settings.focusFullscreen);
  checked('setFocusSound', settings.focusSound);
@@ -3480,16 +3494,22 @@ const App = (() => {
 
  const email = emailInput.value.trim();
  if (!email) {
- if (statusEl) setText('inviteStatus', 'Please enter an email');
- return;
+ UI.toast({ icon: 'info', title: 'Email is optional', body: 'Generate a code to share with your buddy.' });
+ } else {
+ // Email is optional, just for reference
  }
 
- const result = Accountability.inviteFriendByEmail(email);
+ const result = Accountability.inviteFriendByEmail(email || 'buddy');
  if (result.error) {
- if (statusEl) setText('inviteStatus', result.error);
+ UI.toast({ icon: 'alert', title: 'Could not generate code', body: result.error });
  } else {
- if (statusEl) setText('inviteStatus', 'Invite sent! Share code: ' + result.code);
- Storage.update(() => {}, 'accountability'); // trigger refresh
+ const code = result.code;
+ if (statusEl) {
+ statusEl.innerHTML = '<strong>Share this code:</strong> <code style="font-weight:700;font-size:1.2em;letter-spacing:0.15em;">' + code + '</code>' +
+ ' <button class="btn btn-sm btn-ghost" data-action="copy-invite-code" data-code="' + code + '" type="button">Copy</button>';
+ }
+ UI.toast({ icon: 'check', title: 'Code generated!', body: 'Share it with your buddy to connect.' });
+ Storage.update(() => {}, 'accountability');
  setTimeout(() => App.renderAll(), 200);
  }
  }
@@ -4399,6 +4419,7 @@ const App = (() => {
  bindCheck('setProtectBreaks', (value) => setSetting('protectBreaks', value));
  bindCheck('setAutoOptimize', (value) => setSetting('autoOptimize', value));
  bindCheck('setAffFocus', (value) => setNestedSetting('affirmations', 'duringFocus', value));
+ bindCheck('setDarkMode', (value) => { setSetting('darkMode', value); applyTheme(); });
  bindCheck('setReduceMotion', (value) => { setSetting('reduceMotion', value); applyTheme(); });
  bindCheck('setFocusFullscreen', (value) => {
  setSetting('focusFullscreen', value);
@@ -4555,11 +4576,14 @@ const App = (() => {
  }
 
  if (firstEverVisit) {
+ setTimeout(() => {
+ if (Onboarding) Onboarding.show();
+ }, 500);
  setTimeout(() => UI.toast({
  icon: '',
  title: 'Welcome to Luvli',
  body: 'I filled in a sample day so you can see how we work together. Change anything you like.'
- }), 900);
+ }), 2500);
  }
  });
  }

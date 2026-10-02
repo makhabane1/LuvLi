@@ -18,47 +18,47 @@
 /* ============================ 1. DESIGN TOKENS ========================== */
 :root {
   /* --- Brand palette: warm, dreamy, modern aesthetic ------------------- */
-  --bg:         #FFF5F8;
-  --cream:      #FFFAF8;
+  --bg:         #FAFBFC;
+  --cream:      #FFFFFF;
   --white:      #FFFFFF;
-  --baby-pink:  #FDE8F1;
-  --blush:      #F9D4E1;
-  --soft-rose:  #F2A9C0;
-  --dusty-rose: #E090AC;
-  --deep-rose:  #9E536F;
-  --text:       #6B5260;
-  --muted:      #A08593;
-  --line:       #F3DCE6;
+  --baby-pink:  #F0F3F6;
+  --blush:      #E4EBF2;
+  --soft-rose:  #8B9FB8;
+  --dusty-rose: #7A8FA8;
+  --deep-rose:  #5B6B7F;
+  --text:       #546178;
+  --muted:      #8A95A8;
+  --line:       #E8ECEF;
 
   /* --- Modern layer: deeper ink, translucent surfaces, hairlines -------- */
-  --ink:        #2E1C26;        /* headings and big numbers, with more contrast */
-  --ink-soft:   #6B5260;        /* = --text, kept as a semantic alias */
-  --hairline:   rgba(158, 83, 111, .10);
-  --hairline-2: rgba(158, 83, 111, .18);
+  --ink:        #2A3A4A;        /* headings and big numbers, with more contrast */
+  --ink-soft:   #546178;        /* = --text, kept as a semantic alias */
+  --hairline:   rgba(91, 107, 127, .10);
+  --hairline-2: rgba(91, 107, 127, .18);
   --surface:    rgba(255, 255, 255, .92);
-  --surface-2:  #FFF7FA;        /* tinted panel */
-  --surface-3:  #FDEDF3;
-  --accent-peach: #F8C8A0;      /* secondary accents, for dimension */
-  --accent-lilac: #DCC4F8;
+  --surface-2:  #F7F9FB;        /* tinted panel */
+  --surface-3:  #F0F3F6;
+  --accent-peach: #C9A87A;      /* secondary accents, for dimension */
+  --accent-lilac: #A8B8D8;
   --sheen:      inset 0 1px 0 rgba(255, 255, 255, .8), inset 0 -1px 0 rgba(255, 255, 255, .4);
   --sheen-deep: inset 0 1px 0 rgba(255, 255, 255, .6), inset 0 2px 4px rgba(255, 255, 255, .3);
 
   /* --- Category colours: softer and more harmonious -------------------- */
-  --cat-study:       #9585EC;
-  --cat-work:        #6BA5E5;
-  --cat-class:       #8878E5;
-  --cat-project:     #E590BA;
-  --cat-exercise:    #5DB88A;
-  --cat-food:        #E29958;
-  --cat-selfcare:    #E895B5;
-  --cat-cleaning:    #62B8BA;
-  --cat-errands:     #C29462;
-  --cat-personal:    #F2A9C0;
-  --cat-appointment: #C588BE;
-  --cat-sleep:       #7E8CC4;
-  --cat-break:       #8EC5A6;
-  --cat-wellness:    #85C2BC;
-  --cat-custom:      #B49BC5;
+  --cat-study:       #7B7EC4;
+  --cat-work:        #6B9DB5;
+  --cat-class:       #7A7FC4;
+  --cat-project:     #B88FA0;
+  --cat-exercise:    #6BA084;
+  --cat-food:        #C9865F;
+  --cat-selfcare:    #B8909F;
+  --cat-cleaning:    #6BA5A0;
+  --cat-errands:     #A88470;
+  --cat-personal:    #8B9FB8;
+  --cat-appointment: #A58BA8;
+  --cat-sleep:       #7B8BB8;
+  --cat-break:       #7FA897;
+  --cat-wellness:    #7BA08F;
+  --cat-custom:      #9A8FB8;
 
   /* --- Gradients: richer, more dimensional, with warm depth ------------- */
   --grad-pink:   linear-gradient(145deg, #FFF7FA 0%, #FDE8F1 40%, #F9D4E1 100%);
@@ -161,6 +161,7 @@ html[data-theme="lavender"] {
   --surface: rgba(255, 255, 255, .92); --surface-2: #F8F5FF; --surface-3: #F0EBFF;
   --accent-peach: #F6C9AE; --accent-lilac: #D0BCF5;
   --grad-pink: linear-gradient(145deg, #FAF8FF 0%, #F0EBFF 40%, #E4DBFC 100%);
+  --grad-rose: linear-gradient(145deg, #E4DBFC 0%, #D0BCF5 40%, #C0ADEB 100%);
   --grad-card: linear-gradient(170deg, #FFFFFF 0%, #FDFCFF 100%);
   --grad-aurora: linear-gradient(135deg, #C8B4F0 0%, #B8C4F4 30%, #C4D8F8 60%, #F0CCA8 100%);
   --glow: 0 0 0 4px rgba(192, 173, 235, .25);
@@ -173,6 +174,7 @@ html[data-theme="peach"] {
   --surface: rgba(255, 255, 255, .92); --surface-2: #FFF9F4; --surface-3: #FFF0E6;
   --accent-peach: #F5C49D; --accent-lilac: #DFC8ED;
   --grad-pink: linear-gradient(145deg, #FFFAF5 0%, #FFECDE 40%, #FBD9C4 100%);
+  --grad-rose: linear-gradient(145deg, #FBD9C4 0%, #F3AB84 40%, #DE8D66 100%);
   --grad-card: linear-gradient(170deg, #FFFFFF 0%, #FFFCF9 100%);
   --grad-aurora: linear-gradient(135deg, #F5C09A 0%, #F0B8A4 30%, #E8C4D4 60%, #D4B8E8 100%);
   --glow: 0 0 0 4px rgba(243, 171, 132, .22);
@@ -185,11 +187,39 @@ html[data-theme="sage"] {
   --surface: rgba(255, 255, 255, .92); --surface-2: #F7FCF9; --surface-3: #EDF7F1;
   --accent-peach: #F2CBA6; --accent-lilac: #C8D9EF;
   --grad-pink: linear-gradient(145deg, #F9FCFA 0%, #E7F4EC 40%, #D2EADB 100%);
+  --grad-rose: linear-gradient(145deg, #D2EADB 0%, #96CDB0 40%, #70AE8F 100%);
   --grad-card: linear-gradient(170deg, #FFFFFF 0%, #FBFEFC 100%);
   --grad-aurora: linear-gradient(135deg, #8EC8A8 0%, #A0CCB8 30%, #B8D4CC 60%, #C8D8B8 100%);
   --glow: 0 0 0 4px rgba(150, 205, 176, .25);
 }
-html[data-theme="dusk"] {
+html[data-theme="ocean"] {
+  --bg: #F0F8FC; --cream: #F8FBFD; --baby-pink: #E0F0F9; --blush: #C8E4F2;
+  --soft-rose: #7ABDD0; --dusty-rose: #5BA8C4; --deep-rose: #2B5F7F;
+  --text: #3D4A5C; --muted: #6B7F94; --line: #D9ECF5;
+  --ink: #1A2D3D; --hairline: rgba(43, 95, 127, .12); --hairline-2: rgba(43, 95, 127, .2);
+  --surface: rgba(255, 255, 255, .92); --surface-2: #F4F9FC; --surface-3: #E8F3F9;
+  --accent-peach: #D4A88A; --accent-lilac: #A8C8E8;
+  --grad-pink: linear-gradient(145deg, #F6FAFB 0%, #E0F0F9 40%, #C8E4F2 100%);
+  --grad-rose: linear-gradient(145deg, #C8E4F2 0%, #7ABDD0 40%, #5BA8C4 100%);
+  --grad-card: linear-gradient(170deg, #FFFFFF 0%, #F8FCFD 100%);
+  --grad-aurora: linear-gradient(135deg, #7ABDD0 0%, #8BC7DB 30%, #A0D4E8 60%, #B8DFF0 100%);
+  --glow: 0 0 0 4px rgba(122, 189, 208, .25);
+}
+html[data-theme="slate"] {
+  --bg: #F5F7FA; --cream: #FBFCFD; --baby-pink: #E8EEF3; --blush: #D4DDE8;
+  --soft-rose: #7A8FA3; --dusty-rose: #647B8F; --deep-rose: #3D4A5C;
+  --text: #4A555F; --muted: #7B8A99; --line: #E3E9F0;
+  --ink: #1F2A35; --hairline: rgba(61, 74, 92, .12); --hairline-2: rgba(61, 74, 92, .2);
+  --surface: rgba(255, 255, 255, .92); --surface-2: #F9FAFB; --surface-3: #EFF2F5;
+  --accent-peach: #D9B5A0; --accent-lilac: #A8B8D8;
+  --grad-pink: linear-gradient(145deg, #FAFBFC 0%, #E8EEF3 40%, #D4DDE8 100%);
+  --grad-rose: linear-gradient(145deg, #D4DDE8 0%, #7A8FA3 40%, #647B8F 100%);
+  --grad-card: linear-gradient(170deg, #FFFFFF 0%, #FBFCFD 100%);
+  --grad-aurora: linear-gradient(135deg, #7A8FA3 0%, #8B9DAF 30%, #A0B4C7 60%, #B8C9D8 100%);
+  --glow: 0 0 0 4px rgba(122, 143, 163, .25);
+}
+html[data-theme="dusk"],
+html.dark-mode {
   --bg: #1A1418; --cream: #231B21; --white: #2B2128; --baby-pink: #362730;
   --blush: #46333E; --soft-rose: #EAA3BC; --dusty-rose: #F2B8CA;
   --deep-rose: #FBDCE6; --text: #F2E3EA; --muted: #BA9DAB; --line: #3A2B34;
@@ -208,7 +238,6 @@ html[data-theme="dusk"] {
   --shadow-sm: 0 4px 14px rgba(0, 0, 0, .34);
   --shadow-md: 0 10px 30px rgba(0, 0, 0, .42);
   --shadow-lg: 0 24px 60px rgba(0, 0, 0, .5);
-  /* The premium glass layer, re-tinted for the dark theme. */
   --glass-1: rgba(58, 45, 54, .5);
   --glass-2: rgba(48, 37, 45, .62);
   --glass-3: rgba(40, 31, 38, .78);
@@ -224,6 +253,105 @@ html[data-theme="dusk"] {
   --blob-blue:  radial-gradient(circle at 50% 50%, #3E5280 0%, rgba(62,82,128,0) 70%);
 }
 html[data-theme="dusk"] .bg-decor { opacity: .5; }
+
+html[data-theme="midnight"] {
+  --bg: #1A2A3F; --cream: #212E41; --white: #2A3849; --baby-pink: #2E3F53;
+  --blush: #3A4A5F; --soft-rose: #5B8BB8; --dusty-rose: #6B9BC8; --deep-rose: #8BA8D0;
+  --text: #D0D8E8; --muted: #9BA8B8; --line: #3A4A5F;
+  --ink: #F5F8FB; --hairline: rgba(255, 255, 255, .08); --hairline-2: rgba(255, 255, 255, .16);
+  --surface: rgba(26, 42, 63, .92); --surface-2: #232F43; --surface-3: #2A3849;
+  --sheen: inset 0 1px 0 rgba(255, 255, 255, .06), inset 0 -1px 0 rgba(255, 255, 255, .03);
+  --accent-peach: #9B7F5F; --accent-lilac: #6B7FB8;
+  --grad-card: linear-gradient(170deg, #1F2E41 0%, #1A2638 100%);
+  --grad-pink: linear-gradient(145deg, #2E3F53 0%, #2A3849 55%, #232F43 100%);
+  --grad-rose: linear-gradient(145deg, #6B9BC8 0%, #5B8BB8 100%);
+  --grad-aurora: linear-gradient(135deg, #3F5580 0%, #354F78 35%, #2F4A70 65%, #2A4568 100%);
+  --glow: 0 0 0 4px rgba(91, 139, 184, .2);
+  --glass: rgba(26, 42, 63, .82);
+  --glass-strong: rgba(26, 42, 63, .92);
+  --shadow-xs: 0 1px 2px rgba(0, 0, 0, .3);
+  --shadow-sm: 0 4px 14px rgba(0, 0, 0, .34);
+  --shadow-md: 0 10px 30px rgba(0, 0, 0, .42);
+  --shadow-lg: 0 24px 60px rgba(0, 0, 0, .5);
+  --glass-1: rgba(47, 62, 80, .5);
+  --glass-2: rgba(42, 56, 73, .62);
+  --glass-3: rgba(37, 50, 66, .78);
+  --irid-1: #7B9FBF; --irid-2: #5B8FB8; --irid-3: #8BA0C8; --irid-4: #6B93B8;
+  --grad-text: linear-gradient(100deg, #7B9FBF 0%, #5B8FB8 48%, #8BA0C8 100%);
+  --grad-text-cool: linear-gradient(100deg, #5B8FB8 0%, #6B93B8 52%, #7BA0C8 100%);
+  --shadow-card: 0 1px 0 rgba(255,255,255,.06) inset, 0 2px 8px rgba(0,0,0,.3), 0 18px 44px rgba(0,0,0,.4);
+  --shadow-float: 0 4px 14px rgba(0,0,0,.4), 0 32px 80px rgba(0,0,0,.55), 0 8px 24px rgba(0,0,0,.35);
+  --blob-pink:  radial-gradient(circle at 30% 30%, #3A5570 0%, rgba(58,85,112,0) 70%);
+  --blob-lilac: radial-gradient(circle at 40% 40%, #3A4F70 0%, rgba(58,79,112,0) 70%);
+  --blob-peach: radial-gradient(circle at 50% 50%, #4A5F70 0%, rgba(74,95,112,0) 70%);
+  --blob-blue:  radial-gradient(circle at 50% 50%, #3A4F70 0%, rgba(58,79,112,0) 70%);
+}
+
+html[data-theme="charcoal"] {
+  --bg: #242A31; --cream: #2B3139; --white: #333A42; --baby-pink: #383F48;
+  --blush: #434A55; --soft-rose: #6B8FA3; --dusty-rose: #7B9FB8; --deep-rose: #8BA0B8;
+  --text: #D5D8DC; --muted: #A0A8B0; --line: #424952;
+  --ink: #F5F8FA; --hairline: rgba(255, 255, 255, .08); --hairline-2: rgba(255, 255, 255, .16);
+  --surface: rgba(36, 42, 49, .92); --surface-2: #2D3338; --surface-3: #353C44;
+  --sheen: inset 0 1px 0 rgba(255, 255, 255, .06), inset 0 -1px 0 rgba(255, 255, 255, .03);
+  --accent-peach: #A07F60; --accent-lilac: #7B8FB8;
+  --grad-card: linear-gradient(170deg, #282F36 0%, #232A31 100%);
+  --grad-pink: linear-gradient(145deg, #383F48 0%, #333A42 55%, #2D3338 100%);
+  --grad-rose: linear-gradient(145deg, #7B9FB8 0%, #6B8FA3 100%);
+  --grad-aurora: linear-gradient(135deg, #4A5F78 0%, #424F70 35%, #3D4A68 65%, #383F60 100%);
+  --glow: 0 0 0 4px rgba(107, 143, 163, .2);
+  --glass: rgba(36, 42, 49, .82);
+  --glass-strong: rgba(36, 42, 49, .92);
+  --shadow-xs: 0 1px 2px rgba(0, 0, 0, .3);
+  --shadow-sm: 0 4px 14px rgba(0, 0, 0, .34);
+  --shadow-md: 0 10px 30px rgba(0, 0, 0, .42);
+  --shadow-lg: 0 24px 60px rgba(0, 0, 0, .5);
+  --glass-1: rgba(56, 63, 71, .5);
+  --glass-2: rgba(50, 57, 64, .62);
+  --glass-3: rgba(45, 51, 59, .78);
+  --irid-1: #8B9FAB; --irid-2: #6B8FB8; --irid-3: #9BA0B0; --irid-4: #7B93A8;
+  --grad-text: linear-gradient(100deg, #8B9FAB 0%, #6B8FB8 48%, #9BA0B0 100%);
+  --grad-text-cool: linear-gradient(100deg, #6B8FB8 0%, #7B93A8 52%, #8B9FB8 100%);
+  --shadow-card: 0 1px 0 rgba(255,255,255,.06) inset, 0 2px 8px rgba(0,0,0,.3), 0 18px 44px rgba(0,0,0,.4);
+  --shadow-float: 0 4px 14px rgba(0,0,0,.4), 0 32px 80px rgba(0,0,0,.55), 0 8px 24px rgba(0,0,0,.35);
+  --blob-pink:  radial-gradient(circle at 30% 30%, #454F5F 0%, rgba(69,79,95,0) 70%);
+  --blob-lilac: radial-gradient(circle at 40% 40%, #3F4A5F 0%, rgba(63,74,95,0) 70%);
+  --blob-peach: radial-gradient(circle at 50% 50%, #4A5A70 0%, rgba(74,90,112,0) 70%);
+  --blob-blue:  radial-gradient(circle at 50% 50%, #3F4A5F 0%, rgba(63,74,95,0) 70%);
+}
+
+html[data-theme="forest"] {
+  --bg: #1F2A25; --cream: #26312C; --white: #2E3A35; --baby-pink: #323D38;
+  --blush: #3A4540; --soft-rose: #5BA890; --dusty-rose: #6BA880; --deep-rose: #7BA878;
+  --text: #D0D8D4; --muted: #9AA89F; --line: #3A4540;
+  --ink: #F0F8F5; --hairline: rgba(255, 255, 255, .08); --hairline-2: rgba(255, 255, 255, .16);
+  --surface: rgba(31, 42, 37, .92); --surface-2: #282F2A; --surface-3: #303A35;
+  --sheen: inset 0 1px 0 rgba(255, 255, 255, .06), inset 0 -1px 0 rgba(255, 255, 255, .03);
+  --accent-peach: #9F8470; --accent-lilac: #6B9B88;
+  --grad-card: linear-gradient(170deg, #232E29 0%, #1E2923 100%);
+  --grad-pink: linear-gradient(145deg, #323D38 0%, #2E3A35 55%, #282F2A 100%);
+  --grad-rose: linear-gradient(145deg, #6BA880 0%, #5BA890 100%);
+  --grad-aurora: linear-gradient(135deg, #4A6850 0%, #3F5F48 35%, #3A5540 65%, #354B38 100%);
+  --glow: 0 0 0 4px rgba(91, 168, 144, .2);
+  --glass: rgba(31, 42, 37, .82);
+  --glass-strong: rgba(31, 42, 37, .92);
+  --shadow-xs: 0 1px 2px rgba(0, 0, 0, .3);
+  --shadow-sm: 0 4px 14px rgba(0, 0, 0, .34);
+  --shadow-md: 0 10px 30px rgba(0, 0, 0, .42);
+  --shadow-lg: 0 24px 60px rgba(0, 0, 0, .5);
+  --glass-1: rgba(52, 63, 58, .5);
+  --glass-2: rgba(46, 57, 52, .62);
+  --glass-3: rgba(40, 50, 45, .78);
+  --irid-1: #6BA890; --irid-2: #5BA880; --irid-3: #7BA890; --irid-4: #6BA080;
+  --grad-text: linear-gradient(100deg, #6BA890 0%, #5BA880 48%, #7BA890 100%);
+  --grad-text-cool: linear-gradient(100deg, #5BA880 0%, #6BA080 52%, #7BA878 100%);
+  --shadow-card: 0 1px 0 rgba(255,255,255,.06) inset, 0 2px 8px rgba(0,0,0,.3), 0 18px 44px rgba(0,0,0,.4);
+  --shadow-float: 0 4px 14px rgba(0,0,0,.4), 0 32px 80px rgba(0,0,0,.55), 0 8px 24px rgba(0,0,0,.35);
+  --blob-pink:  radial-gradient(circle at 30% 30%, #3A5245 0%, rgba(58,82,69,0) 70%);
+  --blob-lilac: radial-gradient(circle at 40% 40%, #3A4A45 0%, rgba(58,74,69,0) 70%);
+  --blob-peach: radial-gradient(circle at 50% 50%, #4A5A55 0%, rgba(74,90,85,0) 70%);
+  --blob-blue:  radial-gradient(circle at 50% 50%, #3A4A45 0%, rgba(58,74,69,0) 70%);
+}
 
 /* ============================== 2. BASE ================================= */
 *, *::before, *::after { box-sizing: border-box; }
@@ -2399,4 +2527,163 @@ html.reduce-motion .card:hover, html.reduce-motion .btn-primary:hover { transfor
 /* Fallback: browsers without backdrop-filter still get a pleasant surface. */
 @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
   .card, .ai-card, .btn-soft, .input { background: var(--surface); }
+}
+
+/* ============================ ONBOARDING ==================================
+   Interactive 3-step first-time guide for new users. */
+.onboarding-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: fadeIn 0.4s ease-out;
+}
+
+.onboarding-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(42, 58, 74, 0.4);
+  backdrop-filter: blur(2px);
+}
+
+.onboarding-card {
+  position: relative;
+  z-index: 1;
+  background: var(--cream);
+  border-radius: 16px;
+  box-shadow: 0 20px 60px rgba(42, 58, 74, 0.15);
+  max-width: 420px;
+  width: calc(100% - 32px);
+  padding: 32px 24px;
+  text-align: center;
+  animation: slideUp 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.onboarding-progress {
+  margin-bottom: 28px;
+}
+
+.progress-dots {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  margin-bottom: 12px;
+}
+
+.dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--line);
+  transition: all 0.3s ease;
+}
+
+.dot.active {
+  background: var(--deep-rose);
+  width: 24px;
+  border-radius: 4px;
+}
+
+.dot.done {
+  background: var(--accent-lilac);
+}
+
+.progress-text {
+  font-size: 12px;
+  color: var(--muted);
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.onboarding-content {
+  margin-bottom: 32px;
+}
+
+.onboarding-icon {
+  font-size: 56px;
+  line-height: 1;
+  margin-bottom: 20px;
+  display: inline-block;
+  color: var(--deep-rose);
+}
+
+.onboarding-title {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--ink);
+  margin-bottom: 4px;
+}
+
+.onboarding-subtitle {
+  font-size: 14px;
+  color: var(--muted);
+  font-weight: 500;
+  margin-bottom: 16px;
+}
+
+.onboarding-description {
+  font-size: 15px;
+  color: var(--text);
+  line-height: 1.6;
+  margin: 0;
+}
+
+.onboarding-actions {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.onboarding-actions .btn {
+  flex: 1;
+}
+
+.onboarding-close {
+  background: none;
+  border: none;
+  color: var(--muted);
+  font-size: 13px;
+  cursor: pointer;
+  padding: 8px;
+  font-weight: 500;
+  transition: color var(--speed) var(--ease);
+}
+
+.onboarding-close:hover {
+  color: var(--text);
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeOut {
+  to {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+}
+
+@media (max-width: 600px) {
+  .onboarding-card {
+    padding: 28px 20px;
+  }
+
+  .onboarding-title {
+    font-size: 20px;
+  }
+
+  .onboarding-description {
+    font-size: 14px;
+  }
 }
