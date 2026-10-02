@@ -29,6 +29,11 @@
 [functions."send-reminders"]
   schedule = "*/5 * * * *"
 
+# Buddy check-in reminders: checks for pending check-ins every 10 minutes.
+# Sends notifications to focus room participants. Needs same env vars as send-reminders.
+[functions."send-check-in-reminders"]
+  schedule = "*/10 * * * *"
+
 # A gentle security header set for the static app
 [[headers]]
   for = "/*"

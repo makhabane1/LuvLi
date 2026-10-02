@@ -742,6 +742,36 @@
  <div id="recentReactions" class="reactions-display mt-12"></div>
  </div>
 
+ <!-- Schedule Check-Ins -->
+ <div class="card">
+ <div class="card-head">
+ <h2 class="card-title">Schedule check-ins</h2>
+ <span class="card-hint">Send buddy reminders</span>
+ </div>
+ <div class="field-grid">
+ <label class="field">
+ <span class="field-label">Send to</span>
+ <select class="input" id="checkInRecipient">
+ <option value="">— Choose a buddy —</option>
+ </select>
+ </label>
+ <label class="field">
+ <span class="field-label">In (minutes)</span>
+ <input class="input" id="checkInDelay" type="number" min="5" max="120" value="15" />
+ </label>
+ <label class="field">
+ <span class="field-label">Type</span>
+ <select class="input" id="checkInType">
+ <option value="buddy_check">How's your focus?</option>
+ <option value="progress_share">Share your progress</option>
+ <option value="encouragement">Send encouragement</option>
+ </select>
+ </label>
+ </div>
+ <button class="btn btn-primary mt-12" data-action="schedule-check-in" type="button">Schedule reminder</button>
+ <p class="card-hint mt-12" id="checkInStatus">—</p>
+ </div>
+
  <!-- Join Room Section (shown when not in room) -->
  <div class="card" id="joinRoomCard" style="display: none;">
  <div class="card-head">

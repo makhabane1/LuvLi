@@ -1287,6 +1287,15 @@ const App = (() => {
  }).join('');
  setHtml('roomMembersList', membersHtml || '<p class="card-note">No one else in this room yet.</p>');
 
+ // Populate check-in recipients dropdown
+ const recipientSelect = $('checkInRecipient');
+ if (recipientSelect && members.length > 0) {
+ const options = '<option value="">— Choose a buddy —</option>' + members.map(m =>
+ '<option value="' + m.user_id + '">Member ' + m.user_id.slice(0, 8) + '</option>'
+ ).join('');
+ setHtml('checkInRecipient', options);
+ }
+
  // Room stats
  const stats = Accountability.getRoomMemberStatus(room.room_code);
  const statsHtml = '<div class="stat-item">' +
@@ -3693,6 +3702,48 @@ const App = (() => {
  setTimeout(() => App.renderAll(), 200);
  }
 
+ function scheduleCheckIn() {
+ if (!Accountability || !view.focusRoomCode) return;
+
+ const recipientEl = $('checkInRecipient');
+ const delayEl = $('checkInDelay');
+ const typeEl = $('checkInType');
+ const statusEl = $('checkInStatus');
+
+ const recipientId = recipientEl ? recipientEl.value : '';
+ const delayMinutes = parseInt(delayEl ? delayEl.value : 15);
+ const type = typeEl ? typeEl.value : 'buddy_check';
+
+ if (!recipientId) {
+ if (statusEl) setText('checkInStatus', 'Please choose a buddy');
+ return;
+ }
+
+ const scheduled_for = new Date(Date.now() + delayMinutes * 60000).toISOString();
+ const messages = {
+ buddy_check: 'How\'s your focus going?',
+ progress_share: 'Share your progress with the team',
+ encouragement: 'Keep pushing, you\'re doing great!'
+ };
+
+ const result = Accountability.scheduleCheckIn({
+ room_id: view.focusRoomCode,
+ recipient_id: recipientId,
+ scheduled_for: scheduled_for,
+ type: type,
+ message: messages[type] || ''
+ });
+
+ if (result.success) {
+ if (statusEl) setText('checkInStatus', '✓ Reminder scheduled in ' + delayMinutes + ' min');
+ if (recipientEl) recipientEl.value = '';
+ if (delayEl) delayEl.value = 15;
+ setTimeout(() => { if (statusEl) setText('checkInStatus', '—'); }, 3000);
+ } else {
+ if (statusEl) setText('checkInStatus', 'Error scheduling check-in');
+ }
+ }
+
  function createChallengeModal() {
  if (!Accountability) return;
 
@@ -4334,6 +4385,7 @@ const App = (() => {
  case 'set-room-status-break':  setRoomStatus('on_break'); break;
  case 'set-room-status-idle':  setRoomStatus('idle'); break;
  case 'send-emoji-reaction':  sendEmojiReaction(target.getAttribute('data-emoji')); break;
+ case 'schedule-check-in':  scheduleCheckIn(); break;
  /* --- gamification --- */
  case 'create-challenge':  createChallengeModal(); break;
  case 'challenge-create-confirm':  confirmCreateChallenge(); break;
