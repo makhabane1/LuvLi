@@ -4701,12 +4701,21 @@ const App = (() => {
  if (!requireAuth()) return;
  renderAccountCard();
  if (typeof SupabaseSync !== 'undefined') {
- SupabaseSync.init().then(() => { if (typeof LuvliPush !== 'undefined') LuvliPush.syncIfGranted(); });
+ SupabaseSync.init()
+ .then(() => { if (typeof LuvliPush !== 'undefined') LuvliPush.syncIfGranted(); })
+ .catch(err => {
+ console.error('SupabaseSync init failed (non-blocking):', err);
+ // Don't block the app - user can still use local mode
+ });
  }
  // Initialize shared accountability sync (friends, focus rooms, check-ins)
  if (typeof AccountabilitySync !== 'undefined' && typeof window.supabaseClient !== 'undefined') {
+ try {
  AccountabilitySync.init(window.supabaseClient);
  AccountabilitySync.startPolling(60000); // 60-second polling for real-time updates
+ } catch (err) {
+ console.error('AccountabilitySync init failed (non-blocking):', err);
+ }
  }
 
  if (firstEverVisit) {
