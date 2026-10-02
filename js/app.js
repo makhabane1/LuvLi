@@ -1071,6 +1071,44 @@ const App = (() => {
  totals.week.sessions + ' session' + (totals.week.sessions === 1 ? '' : 's'));
  }
 
+ /* ---------------------- MILESTONE CELEBRATIONS ----------------------- */
+ function celebrateMilestone(badge) {
+ if (!badge) return;
+
+ const celebrationHtml = `
+ <div class="milestone-celebration">
+ <div class="celebration-burst"></div>
+ <div class="celebration-content">
+ <div class="celebration-badge-large">${badge.name}</div>
+ <p class="celebration-text">${esc(badge.desc)}</p>
+ <p class="celebration-subtext">You've earned this incredible achievement!</p>
+ <button class="btn btn-primary mt-16" id="closeCelebration" type="button">Celebrate! 🎉</button>
+ </div>
+ </div>
+ `;
+
+ UI.modal({
+ title: '🏆 Badge Unlocked!',
+ bodyHtml: celebrationHtml,
+ actions: []
+ });
+
+ // Close on button click
+ const closeBtn = document.getElementById('closeCelebration');
+ if (closeBtn) {
+ closeBtn.addEventListener('click', () => UI.closeModal());
+ }
+
+ // Add floating animation hearts
+ for (let i = 0; i < 8; i++) {
+ setTimeout(() => {
+ const x = Math.random() * 100 - 50;
+ const y = Math.random() * 60;
+ UI.burst('heart', { x, y });
+ }, i * 100);
+ }
+ }
+
  /* ------------------------------ FRIENDS & STREAKS ---------------------- */
  function renderFriendsPage() {
  if (!Accountability) return; // Module not loaded
