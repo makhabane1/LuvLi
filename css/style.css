@@ -2849,4 +2849,197 @@ html.reduce-motion .card:hover, html.reduce-motion .btn-primary:hover { transfor
   main {
     padding-bottom: 120px;
   }
+
+  /* --- Additional Mobile Improvements --- */
+
+  /* Sidebar responsiveness */
+  .sidebar {
+    position: fixed;
+    left: 0;
+    top: 0;
+    height: 100vh;
+    width: 100%;
+    max-width: 280px;
+    z-index: 100;
+    transform: translateX(-100%);
+    transition: transform 0.3s ease;
+  }
+
+  .sidebar.mobile-open {
+    transform: translateX(0);
+  }
+
+  /* Modal sizing on mobile */
+  .modal {
+    max-width: 90vw;
+    max-height: 90vh;
+    margin: auto;
+  }
+
+  .modal-wide {
+    max-width: 95vw;
+  }
+
+  /* Typography scaling */
+  html {
+    font-size: 15px;
+  }
+
+  h1, .page-title {
+    font-size: 20px;
+    line-height: 1.2;
+  }
+
+  h2 {
+    font-size: 18px;
+  }
+
+  h3 {
+    font-size: 16px;
+  }
+
+  /* Better field layout on mobile */
+  .field-grid {
+    gap: 12px;
+  }
+
+  .field {
+    margin-bottom: 0;
+  }
+
+  /* Improved button spacing */
+  .row-gap {
+    gap: 8px;
+  }
+
+  .btn {
+    width: 100%;
+    margin-bottom: 0;
+  }
+
+  /* Card improvements */
+  .card {
+    padding: 16px;
+    margin-left: -8px;
+    margin-right: -8px;
+    border-radius: 12px;
+  }
+
+  .card-head {
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+
+  .card-title {
+    font-size: 16px;
+  }
+
+  .card-hint {
+    font-size: 12px;
+  }
+
+  /* Grid improvements */
+  .grid {
+    margin-left: -8px;
+    margin-right: -8px;
+  }
+
+  .grid-2 {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+
+  /* View container padding */
+  .view {
+    padding: 12px 8px;
+  }
+
+  /* Stat items on mobile */
+  .stat-row {
+    gap: 8px;
+  }
+
+  .stat-item {
+    padding: 12px;
+    font-size: 14px;
+  }
+
+  /* Timeline improvements */
+  .timeline {
+    margin-left: -8px;
+    margin-right: -8px;
+  }
+
+  /* Modal actions on mobile */
+  .modal-foot {
+    flex-direction: column;
+  }
+
+  .modal-foot .btn {
+    width: 100%;
+  }
+
+  /* Safe area for notched phones */
+  body {
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  .topbar {
+    padding-top: calc(12px + env(safe-area-inset-top));
+  }
+
+  .bottom-nav {
+    padding-bottom: calc(10px + env(safe-area-inset-bottom));
+  }
+
+  /* Improve readability */
+  .page-sub {
+    font-size: 13px;
+  }
+
+  /* Better touch targets for links */
+  a {
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+  }
+
+  /* Checkbox/radio sizing */
+  input[type="checkbox"],
+  input[type="radio"] {
+    width: 20px;
+    height: 20px;
+    cursor: pointer;
+  }
+
+  /* Select dropdown sizing */
+  select {
+    min-height: 44px;
+    font-size: 16px;
+  }
+
+  /* List improvements */
+  .friend-list,
+  .member-list,
+  .history-list {
+    gap: 8px;
+  }
+
+  /* Room/focus mode improvements */
+  .room-member,
+  .friend-card,
+  .friend-item {
+    padding: 12px;
+  }
+
+  /* Badge display on mobile */
+  .badges-row {
+    gap: 6px;
+  }
+
+  .badge {
+    font-size: 12px;
+    padding: 6px 10px;
+  }
 }
