@@ -265,10 +265,22 @@ const AccountabilitySync = (() => {
   function startPolling(intervalMs = 60000) {
     if (pollInterval) clearInterval(pollInterval);
 
-    pollInterval = setInterval(() => {
-      if (!enabled()) return;
+    // Adaptive polling: faster in focus rooms, slower when idle
+    const getPollingInterval = () => {
+      // Check if user is in a focus room (this will be set by app.js)
+      const currentRoom = window.__luvliCurrentRoom;
+      // In a focus room: poll every 10 seconds for real-time feel
+      // Otherwise: poll every 60 seconds to save battery/bandwidth
+      return currentRoom ? 10000 : intervalMs;
+    };
 
-      // Poll friends activity every minute
+    const poll = () => {
+      if (!enabled()) {
+        setTimeout(poll, getPollingInterval());
+        return;
+      }
+
+      // Poll friends activity
       fetchFriends().then(friends => {
         friends.forEach(f => {
           const friendId = f.user_id === Auth.current().id ? f.friend_user_id : f.user_id;
@@ -277,7 +289,13 @@ const AccountabilitySync = (() => {
       });
 
       lastSyncTime = new Date();
-    }, intervalMs);
+
+      // Schedule next poll with adaptive interval
+      setTimeout(poll, getPollingInterval());
+    };
+
+    // Start polling
+    poll();
   }
 
   function stopPolling() {
@@ -285,6 +303,11 @@ const AccountabilitySync = (() => {
       clearInterval(pollInterval);
       pollInterval = null;
     }
+  }
+
+  // Set or clear the current focus room (called by app.js)
+  function setCurrentRoom(roomCode) {
+    window.__luvliCurrentRoom = roomCode;
   }
 
   function getLastSyncTime() {
@@ -310,6 +333,7 @@ const AccountabilitySync = (() => {
     findUserByEmail,
     startPolling,
     stopPolling,
-    getLastSyncTime
+    getLastSyncTime,
+    setCurrentRoom
   };
 })();

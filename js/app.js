@@ -3648,6 +3648,10 @@ const App = (() => {
 
  // Automatically open the room
  view.focusRoomCode = code;
+ // Notify sync module to speed up polling (for real-time focus room updates)
+ if (AccountabilitySync && AccountabilitySync.setCurrentRoom) {
+ AccountabilitySync.setCurrentRoom(code);
+ }
  go('focus-room');
  }
  }
@@ -3671,6 +3675,10 @@ const App = (() => {
  if (statusEl) setText('joinRoomStatus', 'Joined! Now focusing together.');
  setValue(codeInput, '');
  view.focusRoomCode = code;
+ // Notify sync module to speed up polling (for real-time focus room updates)
+ if (AccountabilitySync && AccountabilitySync.setCurrentRoom) {
+ AccountabilitySync.setCurrentRoom(code);
+ }
  setTimeout(() => App.renderAll(), 200);
  }
  }
@@ -3679,6 +3687,10 @@ const App = (() => {
  if (!Accountability || !view.focusRoomCode) return;
 
  Accountability.leaveFocusRoom(view.focusRoomCode);
+ // Notify sync module to slow down polling (no longer in focus room)
+ if (AccountabilitySync && AccountabilitySync.setCurrentRoom) {
+ AccountabilitySync.setCurrentRoom(null);
+ }
  view.focusRoomCode = null;
  go('friends');
  UI.toast({ icon: 'check', title: 'Left room' });
