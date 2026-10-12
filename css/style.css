@@ -2865,3 +2865,13 @@ html.reduce-motion .card:hover, html.reduce-motion .btn-primary:hover { transfor
 
 .more-list { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 .more-list .nav-item { justify-content: flex-start; }
+
+/* Home shows progress as one line; the ring stays in the markup for the page code. */
+.home-slim-progress .progress-ring { display: none; }
+.home-slim-progress .progress-big { display: none; }
+.home-slim-progress .progress-ring-wrap { display: block; }
+.home-slim-progress .progress-ring-center { position: static; transform: none; text-align: left; }
+.home-slim-progress .progress-sub { font-size: 15px; color: var(--ink); font-weight: 600; }
+.home-slim-progress .card-note { display: none; }
+.home-slim-progress { align-self: start; min-height: 0; }
+.home-slim-progress .progress-ring-wrap { height: auto; min-height: 0; padding: 0; }
