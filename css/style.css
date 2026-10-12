@@ -637,7 +637,7 @@ html[data-theme="dusk"] .bg-decor::after { opacity: .045; }
 .bottom-nav::-webkit-scrollbar { display: none; }
 .bn-item {
   position: relative;
-  flex: 1 0 66px;
+  flex: 1 1 0; min-width: 0;
   display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px;
   min-height: 54px; padding: 7px 4px;
   border-radius: 20px;
@@ -2792,9 +2792,8 @@ html.reduce-motion .card:hover, html.reduce-motion .btn-primary:hover { transfor
 @media (max-width: 600px) {
   /* --- Mobile Navigation & Touch Targets --- */
   .bn-item {
-    flex: 1 0 56px;
     min-height: 48px;
-    padding: 6px 4px;
+    padding: 6px 2px;
   }
 
   .btn {
@@ -2863,3 +2862,6 @@ html.reduce-motion .card:hover, html.reduce-motion .btn-primary:hover { transfor
     font-size: 16px;
   }
 }
+
+.more-list { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.more-list .nav-item { justify-content: flex-start; }

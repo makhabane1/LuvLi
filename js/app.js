@@ -279,17 +279,32 @@ const App = (() => {
  }
  }
 
+ const BOTTOM_NAV_PAGES = ['home', 'day', 'study', 'focus', 'progress'];
+
  function buildNav() {
  const nav = $('bottomNav');
  if (nav) {
-  const main = NAV.map((item) =>
+  const main = NAV.filter((item) => BOTTOM_NAV_PAGES.includes(item.page)).map((item) =>
   '<button class="bn-item" data-page="' + item.page + '" type="button">' +
   '<span class="bn-ico">' + ico(item.icon) + '</span>' + item.label + '</button>').join('');
-  const extra = NAV_EXTRA.map((item) =>
-  '<a class="bn-item bn-extra" href="' + item.href + '">' +
-  '<span class="bn-ico">' + ico(item.icon) + '</span>' + item.label + '</a>').join('');
-  nav.innerHTML = main + extra;
+  nav.innerHTML = main +
+  '<button class="bn-item" data-action="open-more" type="button">' +
+  '<span class="bn-ico">' + ico('settings') + '</span>More</button>';
  }
+ }
+
+ function openMoreSheet() {
+ const pageLinks = NAV.filter((item) => !BOTTOM_NAV_PAGES.includes(item.page)).map((item) =>
+  '<button class="nav-item" data-page="' + item.page + '" type="button">' +
+  '<span class="nav-ico">' + ico(item.icon) + '</span><span class="nav-label">' + item.label + '</span></button>').join('');
+ const extraLinks = NAV_EXTRA.map((item) =>
+  '<a class="nav-item" href="' + item.href + '">' +
+  '<span class="nav-ico">' + ico(item.icon) + '</span><span class="nav-label">' + item.label + '</span></a>').join('');
+ UI.modal({
+  title: 'More pages',
+  bodyHtml: '<div class="more-list">' + pageLinks + extraLinks + '</div>',
+  actions: [{ label: 'Close', action: 'modal-cancel', variant: 'ghost' }]
+ });
  }
 
  /** The streak chips, the little quote and your Luvli style. */
@@ -4407,6 +4422,7 @@ const App = (() => {
  case 'set-room-status-idle':  setRoomStatus('idle'); break;
  case 'send-emoji-reaction':  sendEmojiReaction(target.getAttribute('data-emoji')); break;
  case 'schedule-check-in':  scheduleCheckIn(); break;
+ case 'open-more':  openMoreSheet(); break;
  /* --- gamification --- */
  case 'create-challenge':  createChallengeModal(); break;
  case 'challenge-create-confirm':  confirmCreateChallenge(); break;
