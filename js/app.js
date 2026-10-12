@@ -279,7 +279,7 @@ const App = (() => {
  }
  }
 
- const BOTTOM_NAV_PAGES = ['home', 'day', 'study', 'focus', 'progress'];
+ const BOTTOM_NAV_PAGES = ['home', 'day', 'study', 'focus', 'friends'];
 
  function buildNav() {
  const nav = $('bottomNav');
