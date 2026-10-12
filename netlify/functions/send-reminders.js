@@ -26,7 +26,7 @@ const webpush = require('web-push');
 
 // Public values — safe to commit. Only the two env vars above are secret.
 const SUPABASE_URL = 'https://eablejtazhyxbdjvfjmz.supabase.co';
-const VAPID_PUBLIC_KEY = 'BJTytmVOgXV-3YKOvn3y6uY5PEx9EAzRG4vCEra2psPECUiKXm2M6AWH3mvf4z0XIe9V20vVG-UCN2xMkv6hj5k';
+const VAPID_PUBLIC_KEY = 'BJFU-Gl3r_Brw79nY1aRolcW2jeOwRDUI7EE_PbRK_753dJFK_xRlYcq8urt89a5rOtfWNLIfZVslmhbycbEyT4';
 const VAPID_SUBJECT = 'https://luvli.netlify.app';
 
 function rest(path, opts) {
