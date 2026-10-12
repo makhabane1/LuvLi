@@ -156,30 +156,13 @@
  <p class="card-note" id="progressNote">Let's add a few things to your day first, luv.</p>
  </div>
 
- <div class="card card-checkin">
- <div class="card-head">
- <h2 class="card-title">How are you feeling today?</h2>
- </div>
- <div class="mood-strip" id="moodStrip"></div>
- <p class="card-note" id="moodMessage">Tap how you feel and Luvli will adjust the day with you.</p>
- </div>
+ 
  </div>
 
  <!-- The most important card in the app: "What am I supposed to be doing right now?" -->
  <div id="rightNowCard" class="right-now-slot"></div>
 
- <!-- ♡ Luvli AI — the assistant's voice on the day, rendered by app.js -->
- <section class="ai-card shimmer" id="aiCard" aria-labelledby="aiCardTitle">
- <div class="ai-head">
- <span class="ai-glyph" data-ico="cpu" aria-hidden="true"></span>
- <div class="ai-head-text">
- <h2 class="ai-title" id="aiCardTitle">Luvli AI</h2>
- <span class="ai-sub">Your day, considered</span>
- </div>
- </div>
- <p class="ai-message" id="aiMessage">Reading your day…</p>
- <div class="ai-actions" id="aiActions"></div>
- </section>
+ 
 
  <div class="grid grid-2">
  <div class="card card-live">
@@ -202,10 +185,7 @@
  <button class="btn btn-soft btn-big" data-action="night-reset" type="button"><span data-ico="moon"></span>Nightly reset</button>
  <a class="btn btn-soft btn-big" href="vision-board.html"><span data-ico="image"></span>Vision Board</a>
  </div>
- <div class="quote-card">
- <p class="quote-text" id="homeQuote">—</p>
- <button class="btn btn-ghost btn-small" data-action="new-quote" type="button">Another one</button>
- </div>
+ 
  </div>
  </div>
 
@@ -517,6 +497,26 @@
 
  <!-- ==================== PROGRESS ==================== -->
  <section class="view" id="view-progress" data-view="progress">
+ <div class="card card-checkin">
+ <div class="card-head">
+ <h2 class="card-title">How are you feeling today?</h2>
+ </div>
+ <div class="mood-strip" id="moodStrip"></div>
+ <p class="card-note" id="moodMessage">Tap how you feel and Luvli will adjust the day with you.</p>
+ </div>
+
+ <!-- ♡ Luvli AI — the assistant's voice on the day, rendered by app.js -->
+ <section class="ai-card shimmer" id="aiCard" aria-labelledby="aiCardTitle">
+ <div class="ai-head">
+ <span class="ai-glyph" data-ico="cpu" aria-hidden="true"></span>
+ <div class="ai-head-text">
+ <h2 class="ai-title" id="aiCardTitle">Luvli AI</h2>
+ <span class="ai-sub">Your day, considered</span>
+ </div>
+ </div>
+ <p class="ai-message" id="aiMessage">Reading your day…</p>
+ <div class="ai-actions" id="aiActions"></div>
+ </section>
  <div class="section-head">
  <div>
  <h1 class="page-title">Progress</h1>
@@ -855,6 +855,13 @@
 
  <!-- ==================== SETTINGS ==================== -->
  <section class="view" id="view-settings" data-view="settings">
+ <div class="card card-soft">
+ <div class="card-head"><h2 class="card-title">Luvli's little words</h2></div>
+ <div class="quote-card">
+ <p class="quote-text" id="homeQuote">—</p>
+ <button class="btn btn-ghost btn-small" data-action="new-quote" type="button">Another one</button>
+ </div>
+ </div>
  <div class="section-head">
  <div>
  <h1 class="page-title">Settings</h1>
