@@ -1099,14 +1099,7 @@ const App = (() => {
  closeBtn.addEventListener('click', () => UI.closeModal());
  }
 
- // Add floating animation hearts
- for (let i = 0; i < 8; i++) {
- setTimeout(() => {
- const x = Math.random() * 100 - 50;
- const y = Math.random() * 60;
- UI.burst('heart', { x, y });
- }, i * 100);
- }
+ UI.burst(window.innerWidth / 2, window.innerHeight / 3, 14);
  }
 
  /* ------------------------------ FRIENDS & STREAKS ---------------------- */
@@ -1125,6 +1118,22 @@ const App = (() => {
 
  // My Badges
  const badges = Accountability.getBadges(streak);
+ const savedBadgeIds = Storage.latest().accountability?.seenBadges;
+ if (savedBadgeIds) {
+ const freshBadge = badges.find(b => !savedBadgeIds.includes(b.id));
+ if (freshBadge) {
+ Storage.update(s => {
+ if (!s.accountability) s.accountability = {};
+ s.accountability.seenBadges = badges.map(b => b.id);
+ }, 'badges seen');
+ celebrateMilestone(freshBadge);
+ }
+ } else {
+ Storage.update(s => {
+ if (!s.accountability) s.accountability = {};
+ s.accountability.seenBadges = badges.map(b => b.id);
+ }, 'badges seen');
+ }
  if (badges.length > 0) {
  const badgesHtml = badges.map(b =>
  '<div class="badge" title="' + esc(b.desc) + '">' + b.name + '</div>'
@@ -3568,7 +3577,7 @@ const App = (() => {
  const code = result.code;
  if (statusEl) {
  statusEl.innerHTML = '<strong>Share this code:</strong> <code style="font-weight:700;font-size:1.2em;letter-spacing:0.15em;">' + code + '</code>' +
- ' <button class="btn btn-sm btn-ghost" data-action="copy-invite-code" data-code="' + code + '" type="button">Copy</button>';
+ ' <button class="btn btn-small btn-ghost" data-action="copy-invite-code" data-code="' + code + '" type="button">Copy</button>';
  }
  UI.toast({ icon: 'check', title: 'Code generated!', body: 'Share it with your buddy to connect.' });
  Storage.update(() => {}, 'accountability');

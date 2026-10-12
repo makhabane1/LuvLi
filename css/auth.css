@@ -486,7 +486,7 @@ html[data-theme="dusk"] .auth-form-error { background: rgba(74, 46, 57, .7); bor
 
 /* ------------------------------------------------------------- responsive */
 @media (max-width: 900px) {
-  .auth-shell .auth-card { grid-template-columns: 1fr; max-width: 520px; }
+  .auth-shell .auth-card { grid-template-columns: minmax(0, 1fr); max-width: 520px; }
   .auth-aside { display: none; }
   .auth-brand, .auth-panel { grid-column: 1; }
 }
