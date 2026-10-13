@@ -145,6 +145,8 @@ const Storage = (() => {
         protectBreaks: true,
         autoOptimize: true,
         theme: 'rose',
+        darkMode: false,
+        darkModeChosen: false,
         reduceMotion: false,
         notifications: {
           enabled: true,
